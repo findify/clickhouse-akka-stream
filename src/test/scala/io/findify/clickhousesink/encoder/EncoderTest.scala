@@ -24,4 +24,17 @@ class EncoderTest extends FlatSpec with Matchers {
     val encoderRoot = deriveEncoder[Root]
     encoderRoot.encode("root",Root("key", Seq(Nested("foo", 1)))) shouldBe Seq(SimpleField("key","String","'key'"), NestedTable("values",Seq(Row(Seq(SimpleField("foo", "String","'foo'"), SimpleField("bar", "Int32","1"))))))
   }
+
+  it should "derive int/long/float/double" in {
+    case class Simple(key: String, i: Int, l: Long, f: Float, d: Double)
+    val encoder = deriveEncoder[Simple]
+    encoder.encode("root",Simple("foo", 1, 2L, 3.0f, 4.0)) shouldBe Seq(
+      SimpleField("key", "String", "'foo'"),
+      SimpleField("i", "Int32", "1"),
+      SimpleField("l", "Int64", "2"),
+      SimpleField("f", "Float32", "3.0"),
+      SimpleField("d", "Float64", "4.0"),
+    )
+
+  }
 }

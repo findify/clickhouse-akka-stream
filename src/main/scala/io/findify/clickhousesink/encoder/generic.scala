@@ -5,7 +5,11 @@ import shapeless.{:+:, CNil, Coproduct, HList, HNil, LabelledTypeClass, Labelled
 
 object generic {
   implicit val intEncoder = new IntEncoder()
-  implicit val stringEncoder = new StringEncoder
+  implicit val stringEncoder = new StringEncoder()
+  implicit val longEncoder = new LongEncoder()
+  implicit val floatEncoder = new FloatEncoder()
+  implicit val doubleEncoder = new DoubleEncoder()
+
   implicit def arrayEncoder[T <: AnyVal](implicit encoder: Encoder[T]) = new PrimitiveArrayEncoder[T]()
   implicit def seqEncoder[T <: Product](implicit encoder: Encoder[T]) = new SeqEncoder[T]()
 

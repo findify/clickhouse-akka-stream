@@ -1,6 +1,6 @@
 package io.findify.clickhousesink.encoder
 
-import io.findify.clickhousesink.field.{EmptyField, Field}
+import io.findify.clickhousesink.field.Field
 import shapeless.{:+:, CNil, Coproduct, HList, HNil, LabelledTypeClass, LabelledTypeClassCompanion, Lazy}
 
 object generic {
@@ -14,17 +14,17 @@ object generic {
   object auto extends LabelledTypeClassCompanion[Encoder] {
     object typeClass extends LabelledTypeClass[Encoder] {
       override def emptyProduct: Encoder[HNil] = new Encoder[HNil] {
-        override def encode(value: HNil): Seq[Field] = Nil
+        override def encode(name: String, value: HNil): Seq[Field] = Nil
         override def asString(value: HNil): String = ""
       }
 
       override def product[H, T <: HList](name: String, ch: Encoder[H], ct: Encoder[T]): Encoder[shapeless.::[H, T]] = new Encoder[shapeless.::[H, T]] {
-        override def encode(value: shapeless.::[H, T]): Seq[Field] = ch.encode(value.head) ++ ct.encode(value.tail)
+        override def encode(xname: String, value: shapeless.::[H, T]): Seq[Field] = ch.encode(name, value.head) ++ ct.encode("empty",value.tail)
         override def asString(value: shapeless.::[H, T]): String = ???
       }
 
       override def project[F, G](instance: => Encoder[G], to: F => G, from: G => F): Encoder[F] = new Encoder[F] {
-        override def encode(value: F): Seq[Field] = instance.encode(to(value))
+        override def encode(name: String, value: F): Seq[Field] = instance.encode(name, to(value))
         override def asString(value: F): String = instance.asString(to(value))
       }
 

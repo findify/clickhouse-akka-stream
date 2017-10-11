@@ -14,7 +14,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.Duration
 import scala.concurrent.duration._
 import io.circe.syntax._
-import io.findify.clickhousesink.field.{ArrayField, Field, NestedTable, SimpleField}
+import io.findify.clickhousesink.field._
 
 import scala.concurrent.{Future, Promise}
 import scala.util.parsing.json.JSONArray
@@ -75,14 +75,19 @@ object ClickhouseSink {
 
   def flatten(item: Seq[Field]): String = {
     val merged = item.map {
-      case SimpleField(value) => value
-      case ArrayField(values) => values.mkString("[", ",", "]")
-      case NestedTable(rows) =>
+      case SimpleField(_, _, value) => value
+      //case ScalarField(_, value) => value
+      case ArrayField(_, values) => values.map(_.value).mkString("[", ",", "]")
+      case NestedTable(_, rows) =>
         rows.map(_.values).transpose.map(col => col.map {
-          case SimpleField(value) => value
+          case SimpleField(_, _, value) => value
           case _ => ???
         }.mkString("[", ",", "]")).mkString(",")
     }
     merged.mkString("(", ",", ")")
+  }
+
+  def ddl(item: Seq[Field]): String = {
+    item.map(col => s"${col.name} ${col.tpe}").mkString(",")
   }
 }

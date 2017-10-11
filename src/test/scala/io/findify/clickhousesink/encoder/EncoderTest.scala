@@ -1,6 +1,6 @@
 package io.findify.clickhousesink.encoder
 
-import io.findify.clickhousesink.field.{ArrayField, NestedTable, Row, SimpleField}
+import io.findify.clickhousesink.field._
 import org.scalatest.{FlatSpec, Matchers}
 
 class EncoderTest extends FlatSpec with Matchers {
@@ -9,19 +9,19 @@ class EncoderTest extends FlatSpec with Matchers {
   it should "derive encoder for non-nested classes" in {
     case class Simple(key: String, value: Int)
     val encoder = deriveEncoder[Simple]
-    encoder.encode(Simple("foo", 7)) shouldBe Seq(SimpleField("'foo'"), SimpleField("7"))
+    encoder.encode("root",Simple("foo", 7)) shouldBe Seq(SimpleField("key", "String", "'foo'"), SimpleField("value", "Int32", "7"))
   }
 
   it should "derive for classes with arrays" in {
     case class Root(key: String, values: Seq[Int])
     val encoderRoot = deriveEncoder[Root]
-    encoderRoot.encode(Root("k", Array(1,2))) shouldBe Seq(SimpleField("'k'"), ArrayField(Seq("1", "2")))
+    encoderRoot.encode("root", Root("k", Array(1,2))) shouldBe Seq(SimpleField("key", "String", "'k'"), ArrayField("values", Seq(ScalarField("Int32","1"), ScalarField("Int32","2"))))
   }
 
   it should "derive for nested classes" in {
     case class Nested(foo: String, bar: Int)
     case class Root(key: String, values: Seq[Nested])
     val encoderRoot = deriveEncoder[Root]
-    encoderRoot.encode(Root("key", Seq(Nested("foo", 1)))) shouldBe Seq(SimpleField("'key'"), NestedTable(Seq(Row(Seq(SimpleField("'foo'"), SimpleField("1"))))))
+    encoderRoot.encode("root",Root("key", Seq(Nested("foo", 1)))) shouldBe Seq(SimpleField("key","String","'key'"), NestedTable("values",Seq(Row(Seq(SimpleField("foo", "String","'foo'"), SimpleField("bar", "Int32","1"))))))
   }
 }

@@ -11,7 +11,6 @@ class DDLTest extends FlatSpec with Matchers {
   it should "build ddl for plain classes" in {
     case class Simple(key: String, value: Int)
     val encoder = deriveEncoder[Simple]
-    //val tree = encoder.encode("root", Simple("foo", 7))
     encoder.ddl("root")  shouldBe "key String,value Int32"
   }
 

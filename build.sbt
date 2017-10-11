@@ -1,6 +1,8 @@
-name := "clickhouse-sink"
-
+name := "clickhouse-akka-stream"
 version := "0.1"
+organization := "io.findify"
+licenses := Seq("MIT" -> url("https://opensource.org/licenses/MIT"))
+homepage := Some(url("https://github.com/findify/clickhouse-akka-stream"))
 
 scalaVersion := "2.12.3"
 
@@ -21,3 +23,25 @@ libraryDependencies ++= Seq(
   "com.dimafeng" %% "testcontainers-scala" % "0.7.0" % "test",
   "com.chuusai" %% "shapeless" % "2.3.2",
 )
+
+publishMavenStyle := true
+
+publishTo := Some(
+  if (isSnapshot.value)
+    Opts.resolver.sonatypeSnapshots
+  else
+    Opts.resolver.sonatypeStaging
+)
+
+pomExtra := (
+  <scm>
+    <url>git@github.com:findify/clickhouse-akka-stream.git</url>
+    <connection>scm:git:git@github.com:findify/clickhouse-akka-stream.git</connection>
+  </scm>
+    <developers>
+      <developer>
+        <id>romangrebennikov</id>
+        <name>Roman Grebennikov</name>
+        <url>http://www.dfdx.me</url>
+      </developer>
+    </developers>)

@@ -10,10 +10,12 @@ Main features:
 
 TODO:
 * nullable fields
+* custom types for scalar decoders (i.e. scala.Int can be mapped to CH UInt8)
+* moar testing
 
 ## Example
 
-DDL for case class:
+DDL for a simple case class:
 
 ```scala
   import io.findify.clickhousesink.encoder.generic._
@@ -23,9 +25,23 @@ DDL for case class:
   
   val encoder = deriveEncoder[Simple]
   encoder.ddl("simple", "ENGINE = Memory") 
-  // will emit "CREATE TABLE simple (key String,value Int32)"
+  // will emit "CREATE TABLE simple (key String,value Int32) ENGINE = Memory"
 ```
 
+
+DDL for more complex case class:
+
+```scala
+  import io.findify.clickhousesink.encoder.generic._
+  import io.findify.clickhousesink.encoder.generic.auto._
+
+  case class Nested(foo: String, bar: Int)
+  case class Root(key: String, arr: Seq[Int], values: Seq[Nested])
+  val encoder = deriveEncoder[Root]
+  encoder.ddl("root", "ENGINE = Memory")
+  // will emit "CREATE TABLE root (key String,arr Array<Int32>,values Nested(foo String,bar Int32)) ENGINE = Memory"
+
+```
 Writing rows to database:
 
 ```scala

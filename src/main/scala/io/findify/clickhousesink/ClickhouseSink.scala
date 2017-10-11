@@ -7,13 +7,12 @@ import akka.http.scaladsl.model._
 import akka.stream.{ActorMaterializer, Attributes, Inlet, SinkShape}
 import akka.stream.stage._
 import akka.util.ByteString
-import io.circe.{Encoder, Json, JsonObject}
 import io.findify.clickhousesink.ClickhouseSink.Options
+import io.findify.clickhousesink.encoder.Encoder
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.Duration
 import scala.concurrent.duration._
-import io.circe.syntax._
 import io.findify.clickhousesink.field._
 
 import scala.concurrent.{Future, Promise}
@@ -36,14 +35,14 @@ class ClickhouseSink[T](host: String, port: Int, table: String, options: Clickho
       setHandler(in, new InHandler {
         override def onPush(): Unit = {
           val item = grab(in)
-          val json = item.asJson.noSpaces
-          buffer.append(json)
+          val blob = ClickhouseSink.flatten(encoder.encode("root",item))
+          buffer.append(blob)
           pull(in)
         }
 
         override def onUpstreamFinish(): Unit = {
           log.info("done")
-          val data = buffer.mkString(s"INSERT INTO $table FORMAT JSONEachRow\n", "\n", "")
+          val data = buffer.mkString(s"INSERT INTO $table values ", ",", "")
           log.info(data)
           http.singleRequest(HttpRequest(
             method = HttpMethods.POST,
@@ -76,7 +75,6 @@ object ClickhouseSink {
   def flatten(item: Seq[Field]): String = {
     val merged = item.map {
       case SimpleField(_, _, value) => value
-      //case ScalarField(_, value) => value
       case ArrayField(_, values) => values.map(_.value).mkString("[", ",", "]")
       case NestedTable(_, rows) =>
         rows.map(_.values).transpose.map(col => col.map {

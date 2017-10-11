@@ -9,10 +9,11 @@ import com.dimafeng.testcontainers.{ForAllTestContainer, GenericContainer}
 import org.scalatest._
 import org.testcontainers.containers.wait.Wait
 
-import scala.concurrent.{Await, Future}
-import io.circe.generic.semiauto._
 
 class SinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike with ForAllTestContainer with ImplicitSender with BeforeAndAfterAll {
+  import io.findify.clickhousesink.encoder.generic._
+  import io.findify.clickhousesink.encoder.generic.auto._
+
   override val container = GenericContainer(
     imageName = "yandex/clickhouse-server:1.1.54292",
     exposedPorts = Seq(8123),
@@ -30,7 +31,7 @@ class SinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike with 
     client.query("SELECT 1").map(result => assert(result == "1\n"))
   }
 
-  /*it should "create table schema for dummy batch insert" in {
+  it should "create table schema for dummy batch insert" in {
     val schema = "CREATE TABLE foo (k String, v Int32) ENGINE = Memory"
     client.query(schema).map(x => assert(x == ""))
   }
@@ -51,7 +52,7 @@ class SinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike with 
 
   it should "have dummy data in db" in {
     client.query("SELECT count(*) from foo").map(result => assert(result == "3\n"))
-  }*/
+  }
 
   it should "create schema for nested objects" in {
     val schema = "CREATE TABLE nest (k String, v Nested(n String)) ENGINE = Memory"
@@ -61,7 +62,7 @@ class SinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike with 
     case class Nested(n: String)
     case class Root(k: String, v: Seq[Nested])
     val data = List(Root("a", Seq(Nested("aa"))))
-    implicit val nestEncoder = deriveEncoder[Nested]
+    //implicit val nestEncoder = deriveEncoder[Nested]
     implicit val rootEncoder = deriveEncoder[Root]
     val source = Source(data)
     val sink = Sink.fromGraph(new ClickhouseSink[Root](
@@ -73,5 +74,8 @@ class SinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike with 
     result.map(r => assert(r == Done))
   }
 
+  it should "have nested data in db" in {
+    client.query("SELECT count(*) from nest").map(result => assert(result == "1\n"))
+  }
 
 }

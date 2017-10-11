@@ -17,8 +17,6 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion % "test",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.7.2",
   "ch.qos.logback" % "logback-classic" % "1.2.3" % "test",
-  "io.circe" %% "circe-core" % "0.8.0",
-  "io.circe" %% "circe-generic" % "0.8.0",
   "org.scalatest" %% "scalatest" % "3.0.4" % "test",
   "com.dimafeng" %% "testcontainers-scala" % "0.7.0" % "test",
   "com.chuusai" %% "shapeless" % "2.3.2",

@@ -18,14 +18,24 @@ object generic {
   object auto extends LabelledTypeClassCompanion[Encoder] {
     object typeClass extends LabelledTypeClass[Encoder] {
       override def emptyProduct: Encoder[HNil] = new Encoder[HNil] {
+        override def ddl(name: String): String = ""
         override def encode(name: String, value: HNil): Seq[Field] = Nil
       }
 
       override def product[H, T <: HList](name: String, ch: Encoder[H], ct: Encoder[T]): Encoder[shapeless.::[H, T]] = new Encoder[shapeless.::[H, T]] {
+        override def ddl(xname: String): String = {
+          val headDDL = ch.ddl(name)
+          val tailDDL = ct.ddl("empty")
+          if (tailDDL.isEmpty)
+            headDDL
+          else
+            headDDL + "," + tailDDL
+        }
         override def encode(xname: String, value: shapeless.::[H, T]): Seq[Field] = ch.encode(name, value.head) ++ ct.encode("empty",value.tail)
       }
 
       override def project[F, G](instance: => Encoder[G], to: F => G, from: G => F): Encoder[F] = new Encoder[F] {
+        override def ddl(name: String): String = instance.ddl(name)
         override def encode(name: String, value: F): Seq[Field] = instance.encode(name, to(value))
       }
 

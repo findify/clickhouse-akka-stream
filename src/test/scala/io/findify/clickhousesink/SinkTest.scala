@@ -31,15 +31,16 @@ class SinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike with 
     client.query("SELECT 1").map(result => assert(result == "1\n"))
   }
 
+  case class Foo(k: String, v: Int)
+  implicit val fooEncoder = deriveEncoder[Foo]
   it should "create table schema for dummy batch insert" in {
-    val schema = "CREATE TABLE foo (k String, v Int32) ENGINE = Memory"
+    val ddl = fooEncoder.ddl("root")
+    val schema = s"CREATE TABLE foo ($ddl) ENGINE = Memory"
     client.query(schema).map(x => assert(x == ""))
   }
 
   it should "insert dummy data there" in {
-    case class Foo(k: String, v: Int)
     val data = List(Foo("a", 1), Foo("b", 2), Foo("c", 3))
-    implicit val encoder = deriveEncoder[Foo]
     val source = Source(data)
     val sink = Sink.fromGraph(new ClickhouseSink[Foo](
       host = container.containerIpAddress,
@@ -54,16 +55,16 @@ class SinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike with 
     client.query("SELECT count(*) from foo").map(result => assert(result == "3\n"))
   }
 
+  case class Nested(n: String)
+  case class Root(k: String, v: Seq[Nested])
+  implicit val rootEncoder = deriveEncoder[Root]
   it should "create schema for nested objects" in {
-    val schema = "CREATE TABLE nest (k String, v Nested(n String)) ENGINE = Memory"
+    val ddl = rootEncoder.ddl("root")
+    val schema = s"CREATE TABLE nest ($ddl) ENGINE = Memory"
     client.query(schema).map(x => assert(x == ""))
   }
   it should "insert nested data there" in {
-    case class Nested(n: String)
-    case class Root(k: String, v: Seq[Nested])
     val data = List(Root("a", Seq(Nested("aa"))))
-    //implicit val nestEncoder = deriveEncoder[Nested]
-    implicit val rootEncoder = deriveEncoder[Root]
     val source = Source(data)
     val sink = Sink.fromGraph(new ClickhouseSink[Root](
       host = container.containerIpAddress,

@@ -74,18 +74,15 @@ object ClickhouseSink {
 
   def flatten(item: Seq[Field]): String = {
     val merged = item.map {
-      case SimpleField(_, _, value) => value
+      case SimpleField(_, value) => value
       case ArrayField(_, values) => values.map(_.value).mkString("[", ",", "]")
       case NestedTable(_, rows) =>
         rows.map(_.values).transpose.map(col => col.map {
-          case SimpleField(_, _, value) => value
+          case SimpleField(_, value) => value
           case _ => ???
         }.mkString("[", ",", "]")).mkString(",")
     }
     merged.mkString("(", ",", ")")
   }
 
-  def ddl(item: Seq[Field]): String = {
-    item.map(col => s"${col.name} ${col.tpe}").mkString(",")
-  }
 }

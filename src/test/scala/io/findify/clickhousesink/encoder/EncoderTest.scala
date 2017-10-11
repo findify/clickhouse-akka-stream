@@ -9,31 +9,31 @@ class EncoderTest extends FlatSpec with Matchers {
   it should "derive encoder for non-nested classes" in {
     case class Simple(key: String, value: Int)
     val encoder = deriveEncoder[Simple]
-    encoder.encode("root",Simple("foo", 7)) shouldBe Seq(SimpleField("key", "String", "'foo'"), SimpleField("value", "Int32", "7"))
+    encoder.encode("root",Simple("foo", 7)) shouldBe Seq(SimpleField("key", "'foo'"), SimpleField("value", "7"))
   }
 
   it should "derive for classes with arrays" in {
     case class Root(key: String, values: Seq[Int])
     val encoderRoot = deriveEncoder[Root]
-    encoderRoot.encode("root", Root("k", Array(1,2))) shouldBe Seq(SimpleField("key", "String", "'k'"), ArrayField("values", Seq(ScalarField("Int32","1"), ScalarField("Int32","2"))))
+    encoderRoot.encode("root", Root("k", Array(1,2))) shouldBe Seq(SimpleField("key", "'k'"), ArrayField("values", Seq(ScalarField("1"), ScalarField("2"))))
   }
 
   it should "derive for nested classes" in {
     case class Nested(foo: String, bar: Int)
     case class Root(key: String, values: Seq[Nested])
     val encoderRoot = deriveEncoder[Root]
-    encoderRoot.encode("root",Root("key", Seq(Nested("foo", 1)))) shouldBe Seq(SimpleField("key","String","'key'"), NestedTable("values",Seq(Row(Seq(SimpleField("foo", "String","'foo'"), SimpleField("bar", "Int32","1"))))))
+    encoderRoot.encode("root",Root("key", Seq(Nested("foo", 1)))) shouldBe Seq(SimpleField("key","'key'"), NestedTable("values",Seq(Row(Seq(SimpleField("foo","'foo'"), SimpleField("bar","1"))))))
   }
 
   it should "derive int/long/float/double" in {
     case class Simple(key: String, i: Int, l: Long, f: Float, d: Double)
     val encoder = deriveEncoder[Simple]
     encoder.encode("root",Simple("foo", 1, 2L, 3.0f, 4.0)) shouldBe Seq(
-      SimpleField("key", "String", "'foo'"),
-      SimpleField("i", "Int32", "1"),
-      SimpleField("l", "Int64", "2"),
-      SimpleField("f", "Float32", "3.0"),
-      SimpleField("d", "Float64", "4.0"),
+      SimpleField("key", "'foo'"),
+      SimpleField("i", "1"),
+      SimpleField("l", "2"),
+      SimpleField("f", "3.0"),
+      SimpleField("d", "4.0"),
     )
 
   }

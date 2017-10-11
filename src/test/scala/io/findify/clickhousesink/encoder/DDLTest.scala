@@ -17,7 +17,7 @@ class DDLTest extends FlatSpec with Matchers {
   it should "build ddl for collections" in {
     case class Simple(key: String, value: Seq[Int])
     val encoder = deriveEncoder[Simple]
-    encoder.ddl("root") shouldBe "key String,value Array<Int32>"
+    encoder.ddl("root") shouldBe "key String,value Array(Int32)"
   }
 
   it should "build ddl for nested classes" in {
@@ -25,5 +25,11 @@ class DDLTest extends FlatSpec with Matchers {
     case class Root(key: String, values: Seq[Nested])
     val encoderRoot = deriveEncoder[Root]
     encoderRoot.ddl("root") shouldBe "key String,values Nested(foo String,bar Int32)"
+  }
+
+  it should "work for nullable fields" in {
+    case class Simple(key: String, value: Option[Int])
+    val encoder = deriveEncoder[Simple]
+    encoder.ddl("root") shouldBe "key String,value Nullable(Int32)"
   }
 }

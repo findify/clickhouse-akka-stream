@@ -31,7 +31,7 @@ class SinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike with 
     client.query("SELECT 1").map(result => assert(result == "1\n"))
   }
 
-  case class Foo(k: String, v: Int)
+  case class Foo(k: String, v: Int, opt: Option[String])
   implicit val fooEncoder = deriveEncoder[Foo]
   it should "create table schema for dummy batch insert" in {
     val ddl = fooEncoder.ddl("foo", "ENGINE = Memory")
@@ -39,7 +39,7 @@ class SinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike with 
   }
 
   it should "insert dummy data there" in {
-    val data = List(Foo("a", 1), Foo("b", 2), Foo("c", 3))
+    val data = List(Foo("a", 1, None), Foo("b", 2, Some("b")), Foo("c", 3, Some("c")))
     val source = Source(data)
     val sink = Sink.fromGraph(new ClickhouseSink[Foo](
       host = container.containerIpAddress,

@@ -35,6 +35,12 @@ class EncoderTest extends FlatSpec with Matchers {
       SimpleField("f", "3.0"),
       SimpleField("d", "4.0"),
     )
+  }
 
+  it should "derive nullable" in {
+    case class Simple(key: String, value: Option[Int])
+    val encoder = deriveEncoder[Simple]
+    encoder.encode("root",Simple("foo", Some(7))) shouldBe Seq(SimpleField("key", "'foo'"), SimpleField("value", "7"))
+    encoder.encode("root",Simple("foo", None)) shouldBe Seq(SimpleField("key", "'foo'"), SimpleField("value", "null"))
   }
 }

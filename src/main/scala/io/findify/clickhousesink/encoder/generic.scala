@@ -12,6 +12,7 @@ object generic {
 
   implicit def arrayEncoder[T <: AnyVal](implicit encoder: ScalarEncoder[T]) = new PrimitiveArrayEncoder[T]()
   implicit def seqEncoder[T <: Product](implicit encoder: Encoder[T]) = new SeqEncoder[T]()
+  implicit def optionEncoder[T](implicit encoder: ScalarEncoder[T]) = new OptionEncoder[T]()
 
   def deriveEncoder[T](implicit encoder: Lazy[Encoder[T]]) = encoder.value
 

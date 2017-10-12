@@ -1,5 +1,5 @@
 name := "clickhouse-akka-stream"
-version := "0.1.1"
+version := "0.1.2"
 organization := "io.findify"
 licenses := Seq("MIT" -> url("https://opensource.org/licenses/MIT"))
 homepage := Some(url("https://github.com/findify/clickhouse-akka-stream"))

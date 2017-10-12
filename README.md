@@ -13,6 +13,13 @@ Main features:
 TODO:
 * moar testing
 
+## Usage
+
+Build artifacts are available on maven-central. For SBT, add this snippet to `build.sbt`:
+```scala
+libraryDependencies += "io.findify" %% "clickhouse-akka-stream" % "0.1.2"
+```
+
 ## Example
 
 DDL for a simple case class:

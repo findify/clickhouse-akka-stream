@@ -1,3 +1,5 @@
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.findify/clickhouse-akka-stream_2.12/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.findify/clickhouse-akka-stream_2.12)
+
 # Clickhouse sink for akka-stream
 
 This is a prototype of akka-stream compatible Sink for Clickhouse database.
@@ -15,7 +17,7 @@ TODO:
 
 ## Usage
 
-Build artifacts are available on maven-central. For SBT, add this snippet to `build.sbt`:
+Build artifacts are available on maven-central for Scala 2.12. For SBT, add this snippet to `build.sbt`:
 ```scala
 libraryDependencies += "io.findify" %% "clickhouse-akka-stream" % "0.1.2"
 ```

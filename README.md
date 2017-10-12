@@ -58,8 +58,11 @@ Writing rows to database:
   import akka.stream.ActorMaterializer
   import akka.stream.scaladsl.{Keep, Sink, Source}
   import io.findify.clickhousesink.ClickhouseSink
+  import io.findify.clickhousesink.encoder.generic._
+  import io.findify.clickhousesink.encoder.generic.auto._
   
   case class Simple(key: String, value: Int)
+  implicit val encoder = deriveEncoder[Simple]
 
   val source = Source(List(Simple("a", 1), Simple("b", 2), Simple("c", 3)))
   val sink = Sink.fromGraph(new ClickhouseSink[Simple](

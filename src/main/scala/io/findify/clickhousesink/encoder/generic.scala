@@ -1,5 +1,6 @@
 package io.findify.clickhousesink.encoder
 
+import io.findify.clickhousesink.CustomMapper
 import io.findify.clickhousesink.field.Field
 import shapeless.{:+:, CNil, Coproduct, HList, HNil, LabelledTypeClass, LabelledTypeClassCompanion, Lazy}
 
@@ -19,25 +20,25 @@ object generic {
   object auto extends LabelledTypeClassCompanion[Encoder] {
     object typeClass extends LabelledTypeClass[Encoder] {
       override def emptyProduct: Encoder[HNil] = new Encoder[HNil] {
-        override def ddl(name: String): String = ""
-        override def encode(name: String, value: HNil): Seq[Field] = Nil
+        override def ddl(name: String, mapper: CustomMapper): String = ""
+        override def encode(name: String, value: HNil, mapper: CustomMapper): Seq[Field] = Nil
       }
 
       override def product[H, T <: HList](name: String, ch: Encoder[H], ct: Encoder[T]): Encoder[shapeless.::[H, T]] = new Encoder[shapeless.::[H, T]] {
-        override def ddl(xname: String): String = {
-          val headDDL = ch.ddl(name)
-          val tailDDL = ct.ddl("empty")
+        override def ddl(xname: String, mapper: CustomMapper): String = {
+          val headDDL = ch.ddl(name, mapper)
+          val tailDDL = ct.ddl("empty", mapper)
           if (tailDDL.isEmpty)
             headDDL
           else
             headDDL + "," + tailDDL
         }
-        override def encode(xname: String, value: shapeless.::[H, T]): Seq[Field] = ch.encode(name, value.head) ++ ct.encode("empty",value.tail)
+        override def encode(xname: String, value: shapeless.::[H, T], mapper: CustomMapper): Seq[Field] = ch.encode(name, value.head, mapper) ++ ct.encode("", value.tail, mapper)
       }
 
       override def project[F, G](instance: => Encoder[G], to: F => G, from: G => F): Encoder[F] = new Encoder[F] {
-        override def ddl(name: String): String = instance.ddl(name)
-        override def encode(name: String, value: F): Seq[Field] = instance.encode(name, to(value))
+        override def ddl(name: String, mapper: CustomMapper): String = instance.ddl(name, mapper)
+        override def encode(name: String, value: F, mapper: CustomMapper): Seq[Field] = instance.encode(name, to(value), mapper)
       }
 
       override def coproduct[L, R <: Coproduct](name: String, cl: => Encoder[L], cr: => Encoder[R]): Encoder[:+:[L, R]] = ???

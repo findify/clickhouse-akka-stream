@@ -2,7 +2,7 @@ package io.findify.clickhousesink
 
 import akka.Done
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
+import akka.stream.{ActorMaterializer, ActorMaterializerSettings, Supervision}
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.testkit.{ImplicitSender, TestKit}
 import com.dimafeng.testcontainers.{ForAllTestContainer, GenericContainer}
@@ -21,7 +21,14 @@ class SinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike with 
   )
 
   lazy val client = new Client(container.containerIpAddress, container.container.getMappedPort(8123))
-  implicit val mat = ActorMaterializer()
+  val sv: Supervision.Decider = {
+    case e: Throwable =>
+      println("oops", e)
+      Supervision.Restart
+  }
+  val settings = ActorMaterializerSettings(system).withSupervisionStrategy(sv)
+
+  implicit val mat = ActorMaterializer(settings)
   override def afterAll(): Unit = {
     super.afterAll()
     TestKit.shutdownActorSystem(system)
@@ -34,12 +41,12 @@ class SinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike with 
   case class Foo(k: String, v: Int, opt: Option[String])
   implicit val fooEncoder = deriveEncoder[Foo]
   it should "create table schema for dummy batch insert" in {
-    val ddl = fooEncoder.ddl("foo", "ENGINE = Memory")
+    val ddl = fooEncoder.schema("foo", "ENGINE = Memory")
     client.query(ddl).map(x => assert(x == ""))
   }
 
   it should "insert dummy data there" in {
-    val data = List(Foo("a", 1, None), Foo("b", 2, Some("b")), Foo("c", 3, Some("c")))
+    val data = Range(1,10000).map(i => Foo(i.toString, i, None))
     val source = Source(data)
     val sink = Sink.fromGraph(new ClickhouseSink[Foo](
       host = container.containerIpAddress,
@@ -51,14 +58,14 @@ class SinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike with 
   }
 
   it should "have dummy data in db" in {
-    client.query("SELECT count(*) from foo").map(result => assert(result == "3\n"))
+    client.query("SELECT count(*) from foo").map(result => assert(result == "9999\n"))
   }
 
   case class Nested(n: String)
   case class Root(k: String, v: Seq[Nested])
   implicit val rootEncoder = deriveEncoder[Root]
   it should "create schema for nested objects" in {
-    val ddl = rootEncoder.ddl("nest", "ENGINE = Memory")
+    val ddl = rootEncoder.schema("nest", "ENGINE = Memory")
     client.query(ddl).map(x => assert(x == ""))
   }
   it should "insert nested data there" in {

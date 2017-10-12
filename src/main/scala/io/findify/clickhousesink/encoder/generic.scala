@@ -21,7 +21,7 @@ object generic {
     object typeClass extends LabelledTypeClass[Encoder] {
       override def emptyProduct: Encoder[HNil] = new Encoder[HNil] {
         override def ddl(name: String, mapper: CustomMapper): String = ""
-        override def encode(name: String, value: HNil, mapper: CustomMapper): Seq[Field] = Nil
+        override def encode(value: HNil): Seq[Field] = Nil
       }
 
       override def product[H, T <: HList](name: String, ch: Encoder[H], ct: Encoder[T]): Encoder[shapeless.::[H, T]] = new Encoder[shapeless.::[H, T]] {
@@ -33,12 +33,12 @@ object generic {
           else
             headDDL + "," + tailDDL
         }
-        override def encode(xname: String, value: shapeless.::[H, T], mapper: CustomMapper): Seq[Field] = ch.encode(name, value.head, mapper) ++ ct.encode("", value.tail, mapper)
+        override def encode(value: shapeless.::[H, T]): Seq[Field] = ch.encode(value.head) ++ ct.encode(value.tail)
       }
 
       override def project[F, G](instance: => Encoder[G], to: F => G, from: G => F): Encoder[F] = new Encoder[F] {
         override def ddl(name: String, mapper: CustomMapper): String = instance.ddl(name, mapper)
-        override def encode(name: String, value: F, mapper: CustomMapper): Seq[Field] = instance.encode(name, to(value), mapper)
+        override def encode(value: F): Seq[Field] = instance.encode(to(value))
       }
 
       override def coproduct[L, R <: Coproduct](name: String, cl: => Encoder[L], cr: => Encoder[R]): Encoder[:+:[L, R]] = ???

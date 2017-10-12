@@ -1,7 +1,7 @@
 package io.findify.clickhousesink.encoder
-import io.findify.clickhousesink.field.{Field, ScalarField, SimpleField}
+import io.findify.clickhousesink.field.{Field, SimpleField}
 
 class StringEncoder extends ScalarEncoder[String] {
   override def defaultType: String = "String"
-  override protected def encodeRaw(value: String): String = "'" + value + "'"
+  override def encodeRaw(value: String): String = "'" + value + "'"
 }

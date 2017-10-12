@@ -7,10 +7,10 @@ Main features:
 * Able to generate DDL for arbitrary case class.
 * has batching, back-pressure and stuff.
 * supports Array, Nested data types
-
-TODO:
 * nullable fields
 * custom types for scalar decoders (i.e. scala.Int can be mapped to CH UInt8)
+
+TODO:
 * moar testing
 
 ## Example
@@ -24,7 +24,7 @@ DDL for a simple case class:
   case class Simple(key: String, value: Int)
   
   val encoder = deriveEncoder[Simple]
-  encoder.ddl("simple", "ENGINE = Memory") 
+  encoder.schema("simple", "ENGINE = Memory") 
   // will emit "CREATE TABLE simple (key String,value Int32) ENGINE = Memory"
 ```
 
@@ -38,7 +38,7 @@ DDL for more complex case class:
   case class Nested(foo: String, bar: Int)
   case class Root(key: String, arr: Seq[Int], values: Seq[Nested])
   val encoder = deriveEncoder[Root]
-  encoder.ddl("root", "ENGINE = Memory")
+  encoder.schema("root", "ENGINE = Memory")
   // will emit "CREATE TABLE root (key String,arr Array<Int32>,values Nested(foo String,bar Int32)) ENGINE = Memory"
 
 ```
@@ -60,6 +60,26 @@ Writing rows to database:
   ))
   val result = source.runWith(sink)
   // will perform "INSERT INTO simple VALUES ('a', 1),('b',2),('c',3);"
+```
+
+Implementing your own scalar type support:
+```scala
+  import io.findify.clickhousesink.encoder._
+  import io.findify.clickhousesink.encoder.generic._
+  import io.findify.clickhousesink.encoder.generic.auto._
+  
+  case class Color(r: Byte, g: Byte, b: Byte)
+  case class Simple(key: String, custom: Color)
+  // Look, mom, it's a typeclass!
+  implicit val colorEncoder = new ScalarEncoder[Color] {
+    override def defaultType: String = "String"
+    override def encodeRaw(value: Color): String = s"'r=${value.r},g=${value.g},b=${value.b}'"
+  }
+  val encoder = deriveEncoder[Simple]
+  encoder.schema("simple", "ENGINE = Memory")
+  // will emit "CREATE TABLE simple (key String,value String) ENGINE = Memory"
+  val instance = Simple("foo", Color(1,2,3)) 
+  // if written via ClickhouseSink, will emit "INSERT INTO simple VALUES ('foo', 'r=1,g=2,b=3')"
 
 ```
 

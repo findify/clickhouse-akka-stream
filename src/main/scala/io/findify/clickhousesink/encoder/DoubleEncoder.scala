@@ -1,7 +1,7 @@
 package io.findify.clickhousesink.encoder
 
 import io.findify.clickhousesink.CustomMapper
-import io.findify.clickhousesink.field.{Field, ScalarField, SimpleField}
+import io.findify.clickhousesink.field.{Field, SimpleField}
 
 class DoubleEncoder extends ScalarEncoder[Double] {
   override def defaultType: String = "Float64"

@@ -45,7 +45,7 @@ class ClickhouseSink[T]
       setHandler(in, new InHandler {
         override def onPush(): Unit = {
           val item = grab(in)
-          val blob = ClickhouseSink.flatten(encoder.encode("root",item))
+          val blob = ClickhouseSink.flatten(encoder.encode(item))
           buffer.append(blob)
           pull(in)
           if (buffer.size > options.batchSize) {
@@ -101,11 +101,11 @@ object ClickhouseSink {
 
   def flatten(item: Seq[Field]): String = {
     val merged = item.map {
-      case SimpleField(_, value) => value
-      case ArrayField(_, values) => values.map(_.value).mkString("[", ",", "]")
-      case NestedTable(_, rows) =>
+      case SimpleField(value) => value
+      case ArrayField(values) => values.mkString("[", ",", "]")
+      case NestedTable(rows) =>
         rows.map(_.values).transpose.map(col => col.map {
-          case SimpleField(_, value) => value
+          case SimpleField(value) => value
           case _ => ???
         }.mkString("[", ",", "]")).mkString(",")
     }

@@ -5,7 +5,7 @@ import io.findify.clickhousesink.field.{Field}
 
 trait Encoder[T] {
   def encode(value: T): Seq[Field]
-  def ddl(name: String, mapper: CustomMapper = CustomMapper.Noop): String
+  def ddl(name: String, mapper: CustomMapper = CustomMapper.Noop, separator: String = ","): String
 
-  def schema(table:String, options: String, mapper: CustomMapper = CustomMapper.Noop): String = s"CREATE TABLE $table (${ddl("root", mapper)}) $options"
+  def schema(table:String, options: String, mapper: CustomMapper = CustomMapper.Noop, separator: String = ","): String = s"CREATE TABLE $table (${ddl("root", mapper, separator)}) $options"
 }

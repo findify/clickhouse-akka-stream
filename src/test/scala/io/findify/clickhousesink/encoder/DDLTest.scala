@@ -68,4 +68,10 @@ class DDLTest extends FlatSpec with Matchers {
     encoder.schema("simple", "ENGINE = Memory") shouldBe "CREATE TABLE simple (key String,custom String) ENGINE = Memory"
     encoder.encode(Simple("foo", Color(1,2,3))) shouldBe Seq(SimpleField("'foo'"), SimpleField("'r=1,g=2,b=3'"))
   }
+
+  it should "work with separators" in {
+    case class Simple(key: String, value: Int)
+    val encoder = deriveEncoder[Simple]
+    encoder.ddl("root", separator = ", ")  shouldBe "key String, value Int32"
+  }
 }

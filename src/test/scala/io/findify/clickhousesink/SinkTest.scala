@@ -84,4 +84,10 @@ class SinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike with 
     client.query("SELECT count(*) from nest").map(result => assert(result == "1\n"))
   }
 
+  final case class PageView(idEvent : String, isProduct : Boolean, productID : Option[String] = None, url : Option[String] = None, ref : Option[String] = None, refMedium : Option[String] = None, refSource : Option[String] = None, refTerm : Option[String] = None, width : Option[Int] = None, height : Option[Int] = None, logging : Boolean, apiKeyGroupId : Int, apiVersion : String, uniqId : Option[String] = None, visitId : Option[String] = None, timeClient : Option[String] = None, timeServer : String, variantItemId : Option[String] = None, apiKey : Option[String] = None)
+  implicit val pageviewEncoder = deriveEncoder[PageView]
+  it should "create schema for pageview" in {
+    val ddl = pageviewEncoder.schema("pageview", "ENGINE = Memory")
+    client.query(ddl).map(x => assert(x == ""))
+  }
 }

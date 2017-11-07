@@ -12,6 +12,12 @@ class EncoderTest extends FlatSpec with Matchers {
     encoder.encode(Simple("foo", 7)) shouldBe Seq(SimpleField("'foo'"), SimpleField("7"))
   }
 
+  it should "correctly escape strings" in {
+    val en = new StringEncoder()
+    en.quote("""foo'""") shouldBe """foo\'"""
+    en.quote("""foo\""") shouldBe """foo\\"""
+  }
+
   it should "derive for classes with arrays" in {
     case class Root(key: String, values: Seq[Int])
     val encoderRoot = deriveEncoder[Root]

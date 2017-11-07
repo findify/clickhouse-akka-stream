@@ -53,7 +53,7 @@ class SinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike with 
       port = container.container.getMappedPort(8123),
       table = "foo"
     ))
-    val result = source.runWith(sink)
+    val result = source.grouped(100).runWith(sink)
     result.map(r => assert(r == Done))
   }
 
@@ -76,7 +76,7 @@ class SinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike with 
       port = container.container.getMappedPort(8123),
       table = "nest"
     ))
-    val result = source.runWith(sink)
+    val result = source.grouped(10).runWith(sink)
     result.map(r => assert(r == Done))
   }
 

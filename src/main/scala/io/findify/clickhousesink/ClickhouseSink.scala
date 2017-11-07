@@ -16,7 +16,7 @@ import scala.concurrent.duration._
 import io.findify.clickhousesink.field._
 
 import scala.concurrent.{Future, Promise}
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 import scala.util.parsing.json.JSONArray
 
 class ClickhouseSink[T]
@@ -29,50 +29,43 @@ class ClickhouseSink[T]
   implicit val system: ActorSystem,
   mat: Materializer,
   encoder: Encoder[T]
-) extends GraphStageWithMaterializedValue[SinkShape[T], Future[Done]] {
-  val in: Inlet[T] = Inlet("input")
-  override val shape: SinkShape[T] = SinkShape(in)
+) extends GraphStageWithMaterializedValue[SinkShape[Seq[T]], Future[Done]] {
+  val in: Inlet[Seq[T]] = Inlet("input")
+  override val shape: SinkShape[Seq[T]] = SinkShape(in)
 
   override def createLogicAndMaterializedValue(inheritedAttributes: Attributes): (GraphStageLogic, Future[Done]) = {
     val promise = Promise[Done]
     val logic = new GraphStageLogic(shape) with StageLogging {
       val http = Http(system)
       import system.dispatcher
-      val buffer = ArrayBuffer[String]()
 
       override def preStart(): Unit = pull(in)
 
+      val pullCallback = getAsyncCallback[Try[Done]] {
+        case Success(_) =>
+          log.debug("flush complete, pulling")
+          pull(in)
+        case Failure(ex) =>
+          log.error(ex, "cannot flush")
+          promise.failure(ex)
+          failStage(ex)
+      }
+
       setHandler(in, new InHandler {
         override def onPush(): Unit = {
-          val item = grab(in)
-          val blob = ClickhouseSink.flatten(encoder.encode(item))
-          buffer.append(blob)
-          pull(in)
-          if (buffer.size > options.batchSize) {
-            log.info("flush")
-            flush.map(_ => {
-              log.info("pull after flush")
-            })
-          } else {
-            //            pull(in)
-          }
+          val items = grab(in)
+          val blobs = items.map(item => ClickhouseSink.flatten(encoder.encode(item)))
+          flush(blobs).onComplete(pullCallback.invoke)
         }
 
         override def onUpstreamFinish(): Unit = {
           log.info("done")
-          flush.onComplete {
-            case Success(_) =>
-              promise.success(Done)
-              completeStage()
-            case Failure(ex) =>
-              promise.failure(ex)
-              failStage(ex)
-          }
+          promise.success(Done)
+          completeStage()
         }
       })
-      def flush: Future[Done] = {
-        val data = buffer.mkString(s"INSERT INTO $table values ", ",", "")
-        buffer.clear()
+      def flush(inserts: Seq[String]): Future[Done] = {
+        val data = inserts.mkString(s"INSERT INTO $table values ", ",", "")
         log.info(data)
         http.singleRequest(HttpRequest(
           method = HttpMethods.POST,
@@ -97,7 +90,7 @@ class ClickhouseSink[T]
   }
 }
 object ClickhouseSink {
-  case class Options(batchSize: Int = 128, batchFlushTimeout: Duration = 10.seconds, mapper: CustomMapper = CustomMapper.Noop)
+  case class Options(mapper: CustomMapper = CustomMapper.Noop)
 
   def flatten(item: Seq[Field]): String = {
     val merged = item.map {

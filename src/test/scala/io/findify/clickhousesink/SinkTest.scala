@@ -69,7 +69,7 @@ class SinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike with 
     client.query(ddl).map(x => assert(x == ""))
   }
   it should "insert nested data there" in {
-    val data = List(Root("a", Seq(Nested("aa"))))
+    val data = List(Root("a", Seq(Nested("aa"))), Root("b", Nil))
     val source = Source(data)
     val sink = Sink.fromGraph(new ClickhouseSink[Root](
       host = container.containerIpAddress,

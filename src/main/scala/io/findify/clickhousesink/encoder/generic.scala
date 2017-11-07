@@ -27,6 +27,7 @@ object generic {
       }
 
       override def product[H, T <: HList](name: String, ch: Encoder[H], ct: Encoder[T]): Encoder[shapeless.::[H, T]] = new Encoder[shapeless.::[H, T]] {
+        override def fieldCount: Int = ch.fieldCount + 1
         override def ddl(xname: String, mapper: CustomMapper, separator: String): String = {
           val headDDL = ch.ddl(name, mapper, separator)
           val tailDDL = ct.ddl("empty", mapper, separator)

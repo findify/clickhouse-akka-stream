@@ -4,6 +4,7 @@ import io.findify.clickhousesink.CustomMapper
 import io.findify.clickhousesink.field.{Field}
 
 trait Encoder[T] {
+  def fieldCount: Int = 1
   def encode(value: T): Seq[Field]
   def ddl(name: String, mapper: CustomMapper = CustomMapper.Noop, separator: String = ","): String
 

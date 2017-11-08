@@ -3,6 +3,7 @@ package io.findify.clickhousesink.encoder
 import io.findify.clickhousesink.{ClickhouseSink, CustomMapper}
 import io.findify.clickhousesink.encoder.generic.deriveEncoder
 import io.findify.clickhousesink.field.SimpleField
+import org.joda.time.{DateTime, LocalDate}
 import org.scalatest.{FlatSpec, Matchers}
 
 class DDLTest extends FlatSpec with Matchers {
@@ -73,5 +74,12 @@ class DDLTest extends FlatSpec with Matchers {
     case class Simple(key: String, value: Int)
     val encoder = deriveEncoder[Simple]
     encoder.ddl("root", separator = ", ")  shouldBe "key String, value Int32"
+  }
+
+  it should "deal with datetime and date" in {
+    case class Simple(key: String, ts: DateTime, day: LocalDate)
+    val encoder = deriveEncoder[Simple]
+    encoder.schema("simple", "ENGINE = Memory") shouldBe "CREATE TABLE simple (key String,ts DateTime,day Date) ENGINE = Memory"
+    encoder.encode(Simple("foo", new DateTime(2017, 1, 1, 0, 0, 1), new LocalDate(2017, 1, 1))) shouldBe Seq(SimpleField("'foo'"), SimpleField("'2017-01-01 00:00:01'"), SimpleField("'2017-01-01'"))
   }
 }

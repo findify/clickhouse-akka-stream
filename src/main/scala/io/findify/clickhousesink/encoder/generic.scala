@@ -1,6 +1,8 @@
 package io.findify.clickhousesink.encoder
 
 import io.findify.clickhousesink.CustomMapper
+import io.findify.clickhousesink.encoder.DateEncoder.{JavaDateEncoder, JodaLocalDateEncoder}
+import io.findify.clickhousesink.encoder.DateTimeEncoder.{JavaDateTimeEncoder, JodaDateTimeEncoder, JodaLocalDateTimeEncoder}
 import io.findify.clickhousesink.field.Field
 import shapeless.{:+:, CNil, Coproduct, HList, HNil, LabelledTypeClass, LabelledTypeClassCompanion, Lazy}
 
@@ -11,6 +13,11 @@ object generic {
   implicit val floatEncoder = new FloatEncoder()
   implicit val doubleEncoder = new DoubleEncoder()
   implicit val boolEncoder = new BooleanEncoder()
+  implicit val javaDateTimeEncoder = new JavaDateTimeEncoder()
+  implicit val jodaDateTimeEncoder = new JodaDateTimeEncoder()
+  implicit val jodaLocalDateTimeEncoder = new JodaLocalDateTimeEncoder()
+  implicit val javaDateEncoder = new JavaDateEncoder()
+  implicit val jodaDateEncoder = new JodaLocalDateEncoder()
 
   implicit def arrayEncoderPrimitive[T <: AnyVal](implicit encoder: ScalarEncoder[T]) = new PrimitiveArrayEncoder[T]()
   implicit def arrayEncoderString(implicit encoder: ScalarEncoder[String]) = new StringArrayEncoder()

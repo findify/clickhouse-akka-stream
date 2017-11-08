@@ -1,5 +1,5 @@
 name := "clickhouse-akka-stream"
-version := "0.2.0"
+version := "0.2.1"
 organization := "io.findify"
 licenses := Seq("MIT" -> url("https://opensource.org/licenses/MIT"))
 homepage := Some(url("https://github.com/findify/clickhouse-akka-stream"))
@@ -22,6 +22,7 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "3.0.4" % "test",
   "com.dimafeng" %% "testcontainers-scala" % "0.7.0" % "test",
   "com.chuusai" %% "shapeless" % "2.3.2",
+  "joda-time" % "joda-time" % "2.9.9"
 )
 
 publishMavenStyle := true

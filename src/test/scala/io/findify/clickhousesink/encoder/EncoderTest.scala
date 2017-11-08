@@ -34,7 +34,7 @@ class EncoderTest extends FlatSpec with Matchers {
     case class Nested(foo: String, bar: Int)
     case class Root(key: String, values: Seq[Nested])
     val encoderRoot = deriveEncoder[Root]
-    encoderRoot.encode(Root("key", Seq(Nested("foo", 1)))) shouldBe Seq(SimpleField("'key'"), NestedTable(Seq(Row(Seq(SimpleField("'foo'"), SimpleField("1"))))))
+    encoderRoot.encode(Root("key", Seq(Nested("foo", 1)))) shouldBe Seq(SimpleField("'key'"), NestedTable(Seq(Row(Seq(SimpleField("'foo'"), SimpleField("1")))), 2))
   }
 
   it should "derive int/long/float/double" in {

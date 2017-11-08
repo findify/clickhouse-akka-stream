@@ -61,7 +61,7 @@ class SinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike with 
     client.query("SELECT count(*) from foo").map(result => assert(result == "9999\n"))
   }
 
-  case class Nested(n: String)
+  case class Nested(n: String, suffix: Option[Int])
   case class Root(k: String, v: Seq[Nested])
   implicit val rootEncoder = deriveEncoder[Root]
   it should "create schema for nested objects" in {
@@ -69,7 +69,7 @@ class SinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike with 
     client.query(ddl).map(x => assert(x == ""))
   }
   it should "insert nested data there" in {
-    val data = List(Root("a", Seq(Nested("aa"))), Root("b", Nil))
+    val data = List(Root("a", Seq(Nested("aa", Some(1)), Nested("bb", None))), Root("b", Nil))
     val source = Source(data)
     val sink = Sink.fromGraph(new ClickhouseSink[Root](
       host = container.containerIpAddress,
@@ -81,7 +81,7 @@ class SinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike with 
   }
 
   it should "have nested data in db" in {
-    client.query("SELECT count(*) from nest").map(result => assert(result == "1\n"))
+    client.query("SELECT count(*) from nest").map(result => assert(result == "2\n"))
   }
 
   final case class PageView(idEvent : String, isProduct : Boolean, productID : Option[String] = None, url : Option[String] = None, ref : Option[String] = None, refMedium : Option[String] = None, refSource : Option[String] = None, refTerm : Option[String] = None, width : Option[Int] = None, height : Option[Int] = None, logging : Boolean, apiKeyGroupId : Int, apiVersion : String, uniqId : Option[String] = None, visitId : Option[String] = None, timeClient : Option[String] = None, timeServer : String, variantItemId : Option[String] = None, apiKey : Option[String] = None)

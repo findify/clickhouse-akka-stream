@@ -80,7 +80,7 @@ class ClickhouseSink[T]
           case HttpResponse(code, _, entity, _) =>
             entity.dataBytes.runFold(ByteString(""))(_ ++ _).map(_.utf8String).map(line => {
               log.error(line)
-              throw new IllegalArgumentException("non-200 response from clickhouse")
+              throw new IllegalArgumentException(s"non-200 ($code) response from clickhouse")
             })
         }
 
@@ -103,7 +103,7 @@ object ClickhouseSink {
           case _ => ???
         }.mkString("[", ",", "]")).mkString(",")
       case NestedTable(rows, cnt) =>
-        (0 to cnt).map(_ => "[]").mkString(",")
+        (0 until cnt).map(_ => "[]").mkString(",")
     }
     merged.mkString("(", ",", ")")
   }

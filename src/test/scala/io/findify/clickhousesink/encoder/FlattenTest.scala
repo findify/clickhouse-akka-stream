@@ -30,10 +30,18 @@ class FlattenTest extends FlatSpec with Matchers {
   }
 
   it should "generate repr for empty nested tables" in {
-    case class Nested(foo: String, bar: Int)
+    case class Nested(foo: String, bar: Int, baz: Int)
     case class Root(key: String, values: Seq[Nested])
     val encoderRoot = deriveEncoder[Root]
     val tree = encoderRoot.encode(Root("key", Nil))
-    ClickhouseSink.flatten(tree) shouldBe "('key',[],[])"
+    ClickhouseSink.flatten(tree) shouldBe "('key',[],[],[])"
+  }
+
+  it should "generate repr for nested tables with nullable fields" in {
+    case class Nested(foo: String, bar: Option[Int], bar2: Option[Int], bar3: Option[Int])
+    case class Root(key: String, values: Seq[Nested])
+    val encoderRoot = deriveEncoder[Root]
+    val tree = encoderRoot.encode(Root("key", Seq(Nested("a", None,None,None), Nested("b", None, None, None))))
+    ClickhouseSink.flatten(tree) shouldBe "('key',['a','b'],[null,null],[null,null],[null,null])"
   }
 }

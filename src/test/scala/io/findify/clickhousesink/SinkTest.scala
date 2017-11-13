@@ -8,6 +8,8 @@ import akka.testkit.{ImplicitSender, TestKit}
 import com.dimafeng.testcontainers.{ForAllTestContainer, GenericContainer}
 import org.scalatest._
 import org.testcontainers.containers.wait.Wait
+import scala.concurrent.duration._
+import scala.concurrent.Await
 
 
 class SinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike with ForAllTestContainer with ImplicitSender with BeforeAndAfterAll {
@@ -38,7 +40,7 @@ class SinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike with 
     client.query("SELECT 1").map(result => assert(result == "1\n"))
   }
 
-  case class Foo(k: String, v: Int, opt: Option[String])
+  case class Foo(k: String, b: Int, ts: Option[String])
   implicit val fooEncoder = deriveEncoder[Foo]
   it should "create table schema for dummy batch insert" in {
     val ddl = fooEncoder.schema("foo", "ENGINE = Memory")
@@ -89,5 +91,20 @@ class SinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike with 
   it should "create schema for pageview" in {
     val ddl = pageviewEncoder.schema("pageview", "ENGINE = Memory")
     client.query(ddl).map(x => assert(x == ""))
+  }
+
+  it should "map correctly formatted string to DateTime column" in {
+    case class Foo(k: String, ts: String)
+    val tsEncoder = deriveEncoder[Foo]
+    //val ddl = tsEncoder.schema("ts", "ENGINE = Memory")
+    Await.result(client.query("CREATE TABLE ts (k String,ts DateTime) ENGINE = Memory"), 10.second)
+    val sink = Sink.fromGraph(new ClickhouseSink[Foo](
+      host = container.containerIpAddress,
+      port = container.container.getMappedPort(8123),
+      table = "ts"
+    ))
+    val source = Source(List(Foo("a", "2017-01-01 00:00:00")))
+    val result = source.grouped(1).runWith(sink)
+    result.map(r => assert(r == Done))
   }
 }

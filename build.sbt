@@ -22,7 +22,10 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "3.0.4" % "test",
   "com.dimafeng" %% "testcontainers-scala" % "0.7.0" % "test",
   "com.chuusai" %% "shapeless" % "2.3.2",
-  "joda-time" % "joda-time" % "2.9.9"
+  "joda-time" % "joda-time" % "2.9.9",
+  "io.circe" %% "circe-core" % "0.8.0",
+  "io.circe" %% "circe-generic" % "0.8.0",
+  "io.circe" %% "circe-parser" % "0.8.0"
 )
 
 publishMavenStyle := true

@@ -1,4 +1,4 @@
-package io.findify.clickhousesink
+package io.findify.clickhouse
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http

@@ -1,12 +1,12 @@
-package io.findify.clickhousesink.encoder
+package io.findify.clickhouse.encoder
 
-import io.findify.clickhousesink.ClickhouseSink
-import io.findify.clickhousesink.field.{NestedTable, Row, SimpleField}
+import io.findify.clickhouse.ClickhouseSink
+import io.findify.clickhouse.field.{NestedTable, Row, SimpleField}
 import org.scalatest.{FlatSpec, Matchers}
 
 class FlattenTest extends FlatSpec with Matchers {
-  import io.findify.clickhousesink.encoder.generic._
-  import io.findify.clickhousesink.encoder.generic.auto._
+  import io.findify.clickhouse.encoder.generic._
+  import io.findify.clickhouse.encoder.generic.auto._
   it should "generate value repr for plain classes" in {
     case class Simple(key: String, value: Int)
     val encoder = deriveEncoder[Simple]

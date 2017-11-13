@@ -1,4 +1,4 @@
-package io.findify.clickhousesink
+package io.findify.clickhouse
 
 import akka.Done
 import akka.actor.ActorSystem
@@ -7,13 +7,13 @@ import akka.http.scaladsl.model._
 import akka.stream._
 import akka.stream.stage._
 import akka.util.ByteString
-import io.findify.clickhousesink.ClickhouseSink.Options
-import io.findify.clickhousesink.encoder.Encoder
+import io.findify.clickhouse.ClickhouseSink.Options
+import io.findify.clickhouse.encoder.Encoder
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.Duration
 import scala.concurrent.duration._
-import io.findify.clickhousesink.field._
+import io.findify.clickhouse.field._
 
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success, Try}

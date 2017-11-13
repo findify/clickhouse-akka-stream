@@ -1,4 +1,4 @@
-package io.findify.clickhousesink.encoder
+package io.findify.clickhouse.encoder
 
 
 class StringEncoder extends ScalarEncoder[String] {

@@ -1,6 +1,6 @@
-package io.findify.clickhousesink.encoder
-import io.findify.clickhousesink.CustomMapper
-import io.findify.clickhousesink.field.{Field, SimpleField}
+package io.findify.clickhouse.encoder
+import io.findify.clickhouse.CustomMapper
+import io.findify.clickhouse.field.{Field, SimpleField}
 
 class OptionEncoder[T](implicit encoder: ScalarEncoder[T]) extends Encoder[Option[T]] {
   override def ddl(name: String, mapper: CustomMapper, separator: String): String = s"$name Nullable(${encoder.fieldType(name, mapper)})"

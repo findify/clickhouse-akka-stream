@@ -1,4 +1,4 @@
-package io.findify.clickhousesink.field
+package io.findify.clickhouse.field
 
 sealed trait Field
 

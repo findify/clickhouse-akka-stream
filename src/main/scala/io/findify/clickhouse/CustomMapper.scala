@@ -1,4 +1,4 @@
-package io.findify.clickhousesink
+package io.findify.clickhouse
 
 trait CustomMapper {
   def fieldName(name: String): String

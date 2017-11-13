@@ -1,6 +1,6 @@
-package io.findify.clickhousesink.encoder
-import io.findify.clickhousesink.CustomMapper
-import io.findify.clickhousesink.field.{Field, SimpleField}
+package io.findify.clickhouse.encoder
+import io.findify.clickhouse.CustomMapper
+import io.findify.clickhouse.field.{Field, SimpleField}
 
 class IntEncoder extends ScalarEncoder[Int] {
   override def defaultType: String = "Int32"

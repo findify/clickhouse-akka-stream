@@ -1,11 +1,11 @@
-package io.findify.clickhousesink.encoder
+package io.findify.clickhouse.encoder
 
-import io.findify.clickhousesink.field._
+import io.findify.clickhouse.field._
 import org.scalatest.{FlatSpec, Matchers}
 
 class EncoderTest extends FlatSpec with Matchers {
-  import io.findify.clickhousesink.encoder.generic._
-  import io.findify.clickhousesink.encoder.generic.auto._
+  import io.findify.clickhouse.encoder.generic._
+  import io.findify.clickhouse.encoder.generic.auto._
   it should "derive encoder for non-nested classes" in {
     case class Simple(key: String, value: Int)
     val encoder = deriveEncoder[Simple]

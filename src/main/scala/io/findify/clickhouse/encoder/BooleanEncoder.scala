@@ -1,4 +1,4 @@
-package io.findify.clickhousesink.encoder
+package io.findify.clickhouse.encoder
 
 class BooleanEncoder extends ScalarEncoder[Boolean] {
   override def defaultType: String = "UInt8"

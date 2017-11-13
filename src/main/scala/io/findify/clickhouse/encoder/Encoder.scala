@@ -1,7 +1,7 @@
-package io.findify.clickhousesink.encoder
+package io.findify.clickhouse.encoder
 
-import io.findify.clickhousesink.CustomMapper
-import io.findify.clickhousesink.field.{Field}
+import io.findify.clickhouse.CustomMapper
+import io.findify.clickhouse.field.{Field}
 
 trait Encoder[T] {
   def fieldCount: Int = 1

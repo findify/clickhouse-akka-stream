@@ -1,7 +1,7 @@
-package io.findify.clickhousesink.encoder
+package io.findify.clickhouse.encoder
 
-import io.findify.clickhousesink.CustomMapper
-import io.findify.clickhousesink.field.{ArrayField, Field}
+import io.findify.clickhouse.CustomMapper
+import io.findify.clickhouse.field.{ArrayField, Field}
 
 
 class StringArrayEncoder(implicit val encoder: ScalarEncoder[String]) extends Encoder[Seq[String]]{

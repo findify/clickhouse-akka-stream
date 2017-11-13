@@ -1,4 +1,4 @@
-package io.findify.clickhousesink
+package io.findify.clickhouse
 
 import akka.Done
 import akka.actor.ActorSystem
@@ -13,8 +13,8 @@ import scala.concurrent.Await
 
 
 class SinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike with ForAllTestContainer with ImplicitSender with BeforeAndAfterAll {
-  import io.findify.clickhousesink.encoder.generic._
-  import io.findify.clickhousesink.encoder.generic.auto._
+  import io.findify.clickhouse.encoder.generic._
+  import io.findify.clickhouse.encoder.generic.auto._
 
   override val container = GenericContainer(
     imageName = "yandex/clickhouse-server:1.1.54292",

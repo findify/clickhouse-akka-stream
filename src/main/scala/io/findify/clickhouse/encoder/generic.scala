@@ -1,9 +1,9 @@
-package io.findify.clickhousesink.encoder
+package io.findify.clickhouse.encoder
 
-import io.findify.clickhousesink.CustomMapper
-import io.findify.clickhousesink.encoder.DateEncoder.{JavaDateEncoder, JodaLocalDateEncoder}
-import io.findify.clickhousesink.encoder.DateTimeEncoder.{JavaDateTimeEncoder, JodaDateTimeEncoder, JodaLocalDateTimeEncoder}
-import io.findify.clickhousesink.field.Field
+import io.findify.clickhouse.CustomMapper
+import io.findify.clickhouse.encoder.DateEncoder.{JavaDateEncoder, JodaLocalDateEncoder}
+import io.findify.clickhouse.encoder.DateTimeEncoder.{JavaDateTimeEncoder, JodaDateTimeEncoder, JodaLocalDateTimeEncoder}
+import io.findify.clickhouse.field.Field
 import shapeless.{:+:, CNil, Coproduct, HList, HNil, LabelledTypeClass, LabelledTypeClassCompanion, Lazy}
 
 object generic {

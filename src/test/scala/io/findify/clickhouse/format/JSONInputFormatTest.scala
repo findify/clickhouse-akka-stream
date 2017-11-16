@@ -72,4 +72,91 @@ class JSONInputFormatTest extends FlatSpec with Matchers {
     val response = dec.read(example.getBytes("UTF-8"))
     response.right.get.size shouldBe 5
   }
+  it should "deal with arrays" in {
+    val input =
+      """
+        |{
+        |        "meta":
+        |        [
+        |                {
+        |                        "name": "key",
+        |                        "type": "String"
+        |                },
+        |                {
+        |                        "name": "strvalues",
+        |                        "type": "Array(String)"
+        |                },
+        |                {
+        |                        "name": "intvalues",
+        |                        "type": "Array(UInt8)"
+        |                },
+        |                {
+        |                        "name": "floatvalues",
+        |                        "type": "Array(Float32)"
+        |                },
+        |                {
+        |                        "name": "longvalues",
+        |                        "type": "Array(UInt64)"
+        |                }
+        |        ],
+        |
+        |        "data":
+        |        [
+        |                {
+        |                        "key": "foo",
+        |                        "strvalues": ["bar","baz"],
+        |                        "intvalues": [1,2,3],
+        |                        "floatvalues": [0.1,0.2,0.3],
+        |                        "longvalues": ["1","2","3"]
+        |                }
+        |        ],
+        |
+        |        "rows": 1,
+        |
+        |        "statistics":
+        |        {
+        |                "elapsed": 0.000462454,
+        |                "rows_read": 1,
+        |                "bytes_read": 107
+        |        }
+        |}
+      """.stripMargin
+    val response = dec.read(input.getBytes("UTF-8"))
+    response.right.get.size shouldBe 1
+  }
+
+  it should "work with nulls" in {
+    val input = """{
+                  |        "meta":
+                  |        [
+                  |                {
+                  |                        "name": "key",
+                  |                        "type": "String"
+                  |                },
+                  |                {
+                  |                        "name": "v",
+                  |                        "type": "Nullable(String)"
+                  |                }
+                  |        ],
+                  |
+                  |        "data":
+                  |        [
+                  |                {
+                  |                        "key": "foo",
+                  |                        "v": null
+                  |                }
+                  |        ],
+                  |
+                  |        "rows": 1,
+                  |
+                  |        "statistics":
+                  |        {
+                  |                "elapsed": 0.000334462,
+                  |                "rows_read": 1,
+                  |                "bytes_read": 22
+                  |        }
+                  |}""".stripMargin
+    val response = dec.read(input.getBytes("UTF-8"))
+    response.right.get.size shouldBe 1
+  }
 }

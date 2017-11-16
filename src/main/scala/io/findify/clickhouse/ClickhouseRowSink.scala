@@ -9,9 +9,7 @@ import akka.stream.{Attributes, Inlet, Materializer, SinkShape}
 import akka.stream.stage.{GraphStageLogic, GraphStageWithMaterializedValue, InHandler, StageLogging}
 import akka.util.ByteString
 import io.findify.clickhouse.ClickhouseSink.Options
-import io.findify.clickhouse.encoder.Encoder
-import io.findify.clickhouse.field.{ArrayField, Field, NestedTable, SimpleField}
-import io.findify.clickhouse.format.Row
+import io.findify.clickhouse.format.Field.Row
 import io.findify.clickhouse.format.output.OutputFormat
 
 import scala.concurrent.{Future, Promise}

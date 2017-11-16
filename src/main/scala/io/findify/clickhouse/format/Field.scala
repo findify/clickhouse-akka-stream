@@ -7,23 +7,24 @@ import org.joda.time.{LocalDate, LocalDateTime}
 import scala.collection.mutable
 
 sealed trait Field {
-  def value(name: String): Seq[(String, Json)]
+  def valueTuple(name: String): Seq[(String, Json)]
+  def value: Json
 }
 
 
 
 object Field {
   sealed trait ScalarField extends Field {
-    def value(name: String): Seq[(String, Json)] = List(name -> value)
-    def value: Json
+    def valueTuple(name: String): Seq[(String, Json)] = List(name -> value)
   }
   private val dateFormat = DateTimeFormat.forPattern("yyyy-MM-dd")
   private val dateTimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss")
   case class Row(fields: Map[String, Field]) extends Field {
-    override def value(name: String): Seq[(String, Json)] = ???
+    override def valueTuple(name: String): Seq[(String, Json)] = ???
+    override def value: Json = ???
   }
-  case class ScalarRow(fields: Map[String, ScalarField]) extends ScalarField {
-    override def value(name: String): Seq[(String, Json)] = ???
+  case class ScalarRow(fields: Map[String, Field]) extends ScalarField {
+    override def valueTuple(name: String): Seq[(String, Json)] = ???
 
     override def value: Json = ???
   }
@@ -64,7 +65,8 @@ object Field {
     override def value: Json = Json.fromDoubleOrNull(raw)
   }
   case class CNested(raw: Seq[ScalarRow]) extends Field {
-    override def value(name: String): Seq[(String, Json)] = {
+    override def value: Json = ???
+    override def valueTuple(name: String): Seq[(String, Json)] = {
       for {
         head <- raw.headOption.toList
         field <- head.fields.keys
@@ -79,10 +81,10 @@ object Field {
       }
     }
   }
-  case class CArray(raw: Seq[ScalarField]) extends ScalarField {
+  case class CArray[T <: ScalarField](raw: Seq[T]) extends ScalarField {
     override def value: Json = Json.fromValues(raw.map(_.value))
   }
-  case class Nullable(raw: Option[ScalarField]) extends ScalarField {
+  case class Nullable[T <: ScalarField](raw: Option[T]) extends ScalarField {
     override def value: Json = raw match {
       case Some(in) => in.value
       case None => Json.Null

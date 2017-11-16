@@ -9,7 +9,7 @@ import io.findify.clickhouse.format.Field.Row
 class JSONEachRowOutputFormat extends OutputFormat {
   override def name: String = "JSONEachRow"
   override def write(value: Row): ByteString = {
-    val json = Json.fromJsonObject(JsonObject.fromIterable(value.value("")))
+    val json = Json.fromJsonObject(JsonObject.fromIterable(value.valueTuple("")))
     ByteString(json.noSpaces) ++ ByteString("\n")
   }
 }

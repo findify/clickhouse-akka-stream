@@ -1,9 +1,10 @@
 package io.findify.clickhouse.format.encoder
 
 import io.findify.clickhouse.format.Field
-import io.findify.clickhouse.format.Field.ScalarField
 
-trait Encoder[T] {
-  def encode(name: String, value: T): Map[String, Field] = encodeS(name, value)
-  def encodeS(name: String, value: T): Map[String, ScalarField]
+import scala.annotation.implicitNotFound
+
+//@implicitNotFound("Cannot derive typeclass for Encoder[${T},${F}]")
+trait Encoder[T, +F <: Field] {
+  def encode(name: String, value: T): Map[String, F]
 }

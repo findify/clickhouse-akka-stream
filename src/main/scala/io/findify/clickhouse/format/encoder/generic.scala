@@ -1,7 +1,7 @@
 package io.findify.clickhouse.format.encoder
 
 import io.findify.clickhouse.format.Field
-import io.findify.clickhouse.format.Field.ScalarField
+import io.findify.clickhouse.format.Field._
 import org.joda.time.{LocalDate, LocalDateTime}
 import shapeless.{HList, HNil, LabelledProductTypeClass, LabelledProductTypeClassCompanion, Lazy}
 
@@ -13,37 +13,56 @@ object generic {
   implicit val dateTimeEncoder = new DateTimeEncoder()
   implicit val floatEncoder = new FloatEncoder()
   implicit val longEncoder = new LongEncoder()
-  implicit def optionEncoder[T](implicit enc: ScalarEncoder[T]): Encoder[Option[T]] = new OptionEncoder[T]()
-  implicit def arrayEncoder[T <: AnyVal](implicit enc: ScalarEncoder[T]): Encoder[Seq[T]] = new ArrayEncoder[T]()
-  implicit def arrayStringEncoder(implicit enc: ScalarEncoder[String]): Encoder[Seq[String]] = new ArrayStringEncoder()
-  implicit def nestedEncoder[T <: Product](implicit enc: Encoder[T]): Encoder[Seq[T]] = new NestedEncoder[T]()
+  implicit def optionEncoder[T, F <: ScalarField](implicit enc: ScalarEncoder[T,F]): Encoder[Option[T], Nullable[F]] = new OptionEncoder()
+  implicit def arrayEncoder[T <: AnyVal, F <: ScalarField](implicit enc: ScalarEncoder[T,F]): Encoder[Seq[T], CArray[F]] = new ArrayEncoder()
+  implicit def arrayStringEncoder(implicit enc: ScalarEncoder[String, CString]): Encoder[Seq[String], CArray[CString]] = new ArrayStringEncoder()
+  implicit def nestedEncoder[T <: Product, F <: Field](implicit enc: Encoder[T, F]): Encoder[Seq[T], CNested] = new NestedEncoder()
 
-  def deriveEncoder[T](implicit enc: Lazy[Encoder[T]]) = enc.value
+  def deriveEncoder[T](implicit enc: Lazy[RowEncoder[T]]) = enc.value
+  //def deriveNestEncoder[T](implicit enc: Lazy[NestEncoder[T]]) = enc.value
 
-  object auto extends LabelledProductTypeClassCompanion[Encoder] {
-    object typeClass extends LabelledProductTypeClass[Encoder] {
-      override def emptyProduct: Encoder[HNil] = new Encoder[HNil] {
-        override def encodeS(name: String, value: HNil): Map[String, Field.ScalarField] = Map.empty[String, ScalarField]
+  type RowEncoder[T] = Encoder[T, _ <: Field]
+
+  object row extends LabelledProductTypeClassCompanion[RowEncoder] {
+    object typeClass extends LabelledProductTypeClass[RowEncoder] {
+      override def emptyProduct: RowEncoder[HNil] = new Encoder[HNil, Field] {
         override def encode(name: String, value: HNil): Map[String, Field] = Map.empty[String, Field]
       }
 
-      override def product[H, T <: HList](name: String, ch: Encoder[H], ct: Encoder[T]): Encoder[shapeless.::[H, T]] = new Encoder[shapeless.::[H, T]] {
-        override def encodeS(xname: String, value: shapeless.::[H, T]): Map[String, ScalarField] = {
-          ch.encodeS(name, value.head) ++ ct.encodeS(name, value.tail)
-        }
+      override def product[H, T <: HList](name: String, ch: RowEncoder[H], ct: RowEncoder[T]): RowEncoder[shapeless.::[H, T]] = new Encoder[shapeless.::[H, T], Field] {
         override def encode(xname: String, value: shapeless.::[H, T]): Map[String, Field] = {
           ch.encode(name, value.head) ++ ct.encode(name, value.tail)
         }
+
       }
 
-      override def project[F, G](instance: => Encoder[G], to: F => G, from: G => F): Encoder[F] = new Encoder[F] {
-        override def encodeS(name: String, value: F): Map[String, ScalarField] = {
-          instance.encodeS(name, to(value))
-        }
+      override def project[F, G](instance: => RowEncoder[G], to: F => G, from: G => F): RowEncoder[F] = new Encoder[F, Field] {
         override def encode(name: String, value: F): Map[String, Field] = {
           instance.encode(name, to(value))
         }
       }
     }
   }
+
+  /*type NestEncoder[T] = Encoder[T, _ <: ScalarField]
+  object nest extends LabelledProductTypeClassCompanion[NestEncoder] {
+    object typeClass extends LabelledProductTypeClass[NestEncoder] {
+      override def emptyProduct: NestEncoder[HNil] = new Encoder[HNil, ScalarField] {
+        override def encode(name: String, value: HNil): Map[String, ScalarField] = Map.empty[String, ScalarField]
+      }
+
+      override def product[H, T <: HList](name: String, ch: NestEncoder[H], ct: NestEncoder[T]): NestEncoder[shapeless.::[H, T]] = new Encoder[shapeless.::[H, T], ScalarField] {
+        override def encode(xname: String, value: shapeless.::[H, T]): Map[String, ScalarField] = {
+          ch.encode(name, value.head) ++ ct.encode(name, value.tail)
+        }
+
+      }
+
+      override def project[F, G](instance: => NestEncoder[G], to: F => G, from: G => F): NestEncoder[F] = new Encoder[F, ScalarField] {
+        override def encode(name: String, value: F): Map[String, ScalarField] = {
+          instance.encode(name, to(value))
+        }
+      }
+    }
+  }*/
 }

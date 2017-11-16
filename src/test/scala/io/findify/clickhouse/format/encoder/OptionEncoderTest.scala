@@ -6,7 +6,7 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class OptionEncoderTest extends FlatSpec with Matchers {
   import io.findify.clickhouse.format.encoder.generic._
-  import io.findify.clickhouse.format.encoder.generic.row._
+  import io.findify.clickhouse.format.encoder.generic.auto._
   case class Hello(a: String, b: Option[Int])
   val enc = deriveEncoder[Hello]
 

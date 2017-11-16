@@ -6,7 +6,7 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class NestedEncoderTest extends FlatSpec with Matchers {
   import io.findify.clickhouse.format.encoder.generic._
-  import io.findify.clickhouse.format.encoder.generic.row._
+  import io.findify.clickhouse.format.encoder.generic.auto._
   case class Nest(b: String, c: Int)
   case class Hello(a: String, b: Seq[Nest])
   //implicit val ne = deriveEncoder[Nest]

@@ -19,11 +19,9 @@ object generic {
   implicit def nestedEncoder[T <: Product, F <: Field](implicit enc: Encoder[T, F]): Encoder[Seq[T], CNested] = new NestedEncoder()
 
   def deriveEncoder[T](implicit enc: Lazy[RowEncoder[T]]) = enc.value
-  //def deriveNestEncoder[T](implicit enc: Lazy[NestEncoder[T]]) = enc.value
-
   type RowEncoder[T] = Encoder[T, _ <: Field]
 
-  object row extends LabelledProductTypeClassCompanion[RowEncoder] {
+  object auto extends LabelledProductTypeClassCompanion[RowEncoder] {
     object typeClass extends LabelledProductTypeClass[RowEncoder] {
       override def emptyProduct: RowEncoder[HNil] = new Encoder[HNil, Field] {
         override def encode(name: String, value: HNil): Map[String, Field] = Map.empty[String, Field]
@@ -43,26 +41,4 @@ object generic {
       }
     }
   }
-
-  /*type NestEncoder[T] = Encoder[T, _ <: ScalarField]
-  object nest extends LabelledProductTypeClassCompanion[NestEncoder] {
-    object typeClass extends LabelledProductTypeClass[NestEncoder] {
-      override def emptyProduct: NestEncoder[HNil] = new Encoder[HNil, ScalarField] {
-        override def encode(name: String, value: HNil): Map[String, ScalarField] = Map.empty[String, ScalarField]
-      }
-
-      override def product[H, T <: HList](name: String, ch: NestEncoder[H], ct: NestEncoder[T]): NestEncoder[shapeless.::[H, T]] = new Encoder[shapeless.::[H, T], ScalarField] {
-        override def encode(xname: String, value: shapeless.::[H, T]): Map[String, ScalarField] = {
-          ch.encode(name, value.head) ++ ct.encode(name, value.tail)
-        }
-
-      }
-
-      override def project[F, G](instance: => NestEncoder[G], to: F => G, from: G => F): NestEncoder[F] = new Encoder[F, ScalarField] {
-        override def encode(name: String, value: F): Map[String, ScalarField] = {
-          instance.encode(name, to(value))
-        }
-      }
-    }
-  }*/
 }

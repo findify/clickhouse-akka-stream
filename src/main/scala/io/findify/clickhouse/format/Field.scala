@@ -37,22 +37,26 @@ object Field {
   case class FixedString(raw: String, length: Int) extends ScalarField {
     override def value: Json = Json.fromString(raw)
   }
-  case class Int8(raw: Int) extends ScalarField {
+  sealed trait ByteNumber extends ScalarField
+  sealed trait IntNumber extends ScalarField
+  sealed trait LongNumber extends ScalarField
+  sealed trait RealNumber extends ScalarField
+  case class Int8(raw: Byte) extends ByteNumber {
     override def value: Json = Json.fromInt(raw)
   }
-  case class Int32(raw: Int) extends ScalarField {
+  case class UInt8(raw: Byte) extends ByteNumber {
     override def value: Json = Json.fromInt(raw)
   }
-  case class Int64(raw: Long) extends ScalarField {
+  case class Int32(raw: Int) extends IntNumber {
+    override def value: Json = Json.fromInt(raw)
+  }
+  case class Int64(raw: Long) extends LongNumber {
     override def value: Json = Json.fromLong(raw)
   }
-  case class UInt8(raw: Int) extends ScalarField {
+  case class UInt32(raw: Int) extends IntNumber {
     override def value: Json = Json.fromInt(raw)
   }
-  case class UInt32(raw: Int) extends ScalarField {
-    override def value: Json = Json.fromInt(raw)
-  }
-  case class UInt64(raw: Long) extends ScalarField {
+  case class UInt64(raw: Long) extends LongNumber {
     override def value: Json = Json.fromLong(raw)
   }
   case class CDate(raw: LocalDate) extends ScalarField {
@@ -105,10 +109,10 @@ object Field {
   def applyScalar[T](tpe: String, value: Json): ScalarField = (tpe, value.asString, value.asArray, value.asNumber) match {
     case (fixedStringPattern(length), Some(str), _, _) => FixedString(str, length.toInt)
     case ("String", Some(str), _, _) => CString(str)
-    case ("UInt8", _, _, Some(num)) => UInt8(num.truncateToInt)
+    case ("UInt8", _, _, Some(num)) => UInt8(num.truncateToByte)
     case ("UInt32", _, _, Some(num)) => UInt32(num.truncateToInt)
     case ("UInt64", Some(str), _, _) => UInt64(str.toLong)
-    case ("Int8", _, _, Some(num)) => Int8(num.truncateToInt)
+    case ("Int8", _, _, Some(num)) => Int8(num.truncateToByte)
     case ("Int32", _, _, Some(num)) => Int32(num.truncateToInt)
     case ("Int64", _, _, Some(num)) => Int64(num.truncateToLong)
     case ("Float32", _, _, Some(num)) => Float32(num.toDouble.floatValue())

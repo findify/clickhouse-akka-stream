@@ -1,11 +1,14 @@
 package io.findify.clickhouse.format.encoder
 
-import io.findify.clickhouse.format.Field
+import io.findify.clickhouse.format.{Field, Scalar}
 import io.findify.clickhouse.format.Field._
 import org.joda.time.{LocalDate, LocalDateTime}
 import shapeless.{HList, HNil, LabelledProductTypeClass, LabelledProductTypeClassCompanion, Lazy}
 
 object generic {
+
+  import io.findify.clickhouse.format.Scalar._
+
   implicit val stringEncoder = new StringEncoder()
   implicit val intEncoder = new IntEncoder()
   implicit val boolEncoder = new BooleanEncoder()
@@ -13,9 +16,8 @@ object generic {
   implicit val dateTimeEncoder = new DateTimeEncoder()
   implicit val floatEncoder = new FloatEncoder()
   implicit val longEncoder = new LongEncoder()
-  implicit def optionEncoder[T, F <: ScalarField](implicit enc: ScalarEncoder[T,F]): Encoder[Option[T], Nullable[F]] = new OptionEncoder()
-  implicit def arrayEncoder[T <: AnyVal, F <: ScalarField](implicit enc: ScalarEncoder[T,F]): Encoder[Seq[T], CArray[F]] = new ArrayEncoder()
-  implicit def arrayStringEncoder(implicit enc: ScalarEncoder[String, CString]): Encoder[Seq[String], CArray[CString]] = new ArrayStringEncoder()
+  implicit def optionEncoder[T, F <: ScalarField](implicit enc: ScalarEncoder[T,F], s: Scalar[T]): Encoder[Option[T], Nullable[F]] = new OptionEncoder[T,F]()
+  implicit def arrayEncoder[T, F <: ScalarField](implicit enc: ScalarEncoder[T,F], s: Scalar[T]): Encoder[Seq[T], CArray[F]] = new ArrayEncoder[T,F]()
   implicit def nestedEncoder[T <: Product, F <: Field](implicit enc: Encoder[T, F]): Encoder[Seq[T], CNested] = new NestedEncoder()
 
   def deriveEncoder[T](implicit enc: Lazy[RowEncoder[T]]) = enc.value

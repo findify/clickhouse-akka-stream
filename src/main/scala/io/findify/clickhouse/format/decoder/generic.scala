@@ -1,14 +1,23 @@
 package io.findify.clickhouse.format.decoder
 
-import io.findify.clickhouse.format.Field
-import io.findify.clickhouse.format.Field.{CArray, Row, ScalarField}
-import io.findify.clickhouse.format.decoder.IntDecoder.{Int32Decoder, UInt32Decoder}
+import io.findify.clickhouse.format.{Field, Scalar}
+import io.findify.clickhouse.format.Field._
+import org.joda.time.{LocalDate, LocalDateTime}
 import shapeless.{HList, HNil, LabelledProductTypeClass, LabelledProductTypeClassCompanion, Lazy}
 
 object generic {
+  import Scalar._
   implicit val stringDecoder = new StringDecoder()
-  implicit val int32Decoder = new Int32Decoder()
-  implicit def arrayDecoder[T <: AnyVal, F <: ScalarField](implicit dec: Decoder[T, F]): Decoder[Seq[T], CArray[F]] = new ArrayDecoder[T,F]()
+  implicit val intDecoder = new IntDecoder()
+  implicit val byteDecoder = new ByteDecoder()
+  implicit val booleanDecoder = new BooleanDecoder()
+  implicit val dateDecoder = new DateDecoder()
+  implicit val dateTimeDecoder = new DateTimeDecoder()
+  implicit val doubleDecoder = new DoubleDecoder()
+  implicit val floatDecoder = new FloatDecoder()
+  implicit val longDecoder = new LongDecoder()
+  implicit def arrayDecoder[T, F <: ScalarField](implicit dec: Decoder[T, F], s: Scalar[T]): Decoder[Seq[T], CArray[F]] = new ArrayDecoder[T,F]()
+  implicit def optionDecoder[T, F <: ScalarField](implicit dec: Decoder[T,F], s: Scalar[T]): Decoder[Option[T], Nullable[F]] = new OptionEncoder[T, F]()
 
   type RowDecoder[T] = Decoder[T, _ <: Field]
   def deriveDecoder[T](implicit dec: Lazy[RowDecoder[T]]) = dec.value

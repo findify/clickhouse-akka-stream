@@ -37,9 +37,9 @@ publishTo := Some(
     Opts.resolver.sonatypeStaging
 )
 
-//addCompilerPlugin("io.tryp" % "splain" % "0.2.7" cross CrossVersion.patch)
+addCompilerPlugin("io.tryp" % "splain" % "0.2.7" cross CrossVersion.patch)
 
-//scalacOptions ++= Seq("-P:splain:implicits:true","-P:splain:color:false")
+scalacOptions ++= Seq("-P:splain:implicits:true","-P:splain:color:false")
 
 pomExtra := (
   <scm>

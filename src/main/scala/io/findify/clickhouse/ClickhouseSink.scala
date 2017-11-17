@@ -9,12 +9,12 @@ import akka.stream.{Attributes, Inlet, Materializer, SinkShape}
 import akka.stream.stage.{GraphStageLogic, GraphStageWithMaterializedValue, InHandler, StageLogging}
 import akka.util.ByteString
 import io.findify.clickhouse.format.Field.Row
-import io.findify.clickhouse.format.output.OutputFormat
+import io.findify.clickhouse.format.output.{JSONEachRowOutputFormat, OutputFormat}
 
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success, Try}
 
-class ClickhouseSink(host: String, port: Int, table: String, format: OutputFormat)
+class ClickhouseSink(host: String, port: Int, table: String, format: OutputFormat = new JSONEachRowOutputFormat())
 (
   implicit val system: ActorSystem,
   mat: Materializer

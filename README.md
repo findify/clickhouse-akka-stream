@@ -6,11 +6,9 @@ This is a prototype of akka-stream compatible Sink for Clickhouse database.
 Main features:
 
 * Can transparently write any case class (if key names and types match).
-* Able to generate DDL for arbitrary case class.
 * has batching, back-pressure and stuff.
 * supports Array, Nested data types
 * nullable fields
-* custom types for scalar decoders (i.e. scala.Int can be mapped to CH UInt8)
 
 TODO:
 * moar testing
@@ -19,80 +17,76 @@ TODO:
 
 Build artifacts are available on maven-central for Scala 2.12. For SBT, add this snippet to `build.sbt`:
 ```scala
-libraryDependencies += "io.findify" %% "clickhouse-akka-stream" % "0.1.2"
+libraryDependencies += "io.findify" %% "clickhouse-akka-stream" % "0.3.0"
 ```
 
 ## Example
 
-DDL for a simple case class:
-
-```scala
-  import io.findify.clickhousesink.encoder.generic._
-  import io.findify.clickhousesink.encoder.generic.auto._
-  
-  case class Simple(key: String, value: Int)
-  
-  val encoder = deriveEncoder[Simple]
-  encoder.schema("simple", "ENGINE = Memory") 
-  // will emit "CREATE TABLE simple (key String,value Int32) ENGINE = Memory"
-```
-
-
-DDL for more complex case class:
-
-```scala
-  import io.findify.clickhousesink.encoder.generic._
-  import io.findify.clickhousesink.encoder.generic.auto._
-
-  case class Nested(foo: String, bar: Int)
-  case class Root(key: String, arr: Seq[Int], values: Seq[Nested])
-  val encoder = deriveEncoder[Root]
-  encoder.schema("root", "ENGINE = Memory")
-  // will emit "CREATE TABLE root (key String,arr Array<Int32>,values Nested(foo String,bar Int32)) ENGINE = Memory"
-
-```
 Writing rows to database:
 
 ```scala
-  import akka.actor.ActorSystem
-  import akka.stream.ActorMaterializer
-  import akka.stream.scaladsl.{Keep, Sink, Source}
-  import io.findify.clickhousesink.ClickhouseSink
-  import io.findify.clickhousesink.encoder.generic._
-  import io.findify.clickhousesink.encoder.generic.auto._
-  
-  case class Simple(key: String, value: Int)
-  implicit val encoder = deriveEncoder[Simple]
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.{Sink, Source}
+import io.findify.clickhouse.ClickhouseSink
+import io.findify.clickhouse.format.encoder.generic._
 
-  val source = Source(List(Simple("a", 1), Simple("b", 2), Simple("c", 3)))
-  val sink = Sink.fromGraph(new ClickhouseSink[Simple](
-    host = "localhost",
-    port = 8123,
-    table = "simple"
-  ))
-  val result = source.runWith(sink)
-  // will perform "INSERT INTO simple VALUES ('a', 1),('b',2),('c',3);"
+
+class WriteExample {
+  def main(args: Array[String]): Unit = {
+    implicit val system = ActorSystem.create("clickhouse")
+    implicit val mat = ActorMaterializer()
+
+    case class Simple(key: String, value: Int)
+    implicit val encoder = deriveEncoder[Simple]
+
+    val source = Source(List(Simple("a", 1), Simple("b", 2), Simple("c", 3)))
+      .map(_.asRow)
+      .grouped(100)
+    val sink = Sink.fromGraph(new ClickhouseSink(
+      host = "localhost",
+      port = 8123,
+      table = "simple"
+    ))
+    val result = source.runWith(sink)
+    // will perform:
+    // INSERT INTO simple FORMAT JSONEachRow
+    // {"key": "a", "value": 1}
+    // {"key": "b", "value": 2}
+    // {"key": "c", "value": 3}
+  }
+}
 ```
 
-Implementing your own scalar type support:
+Reading rows from database:
 ```scala
-  import io.findify.clickhousesink.encoder._
-  import io.findify.clickhousesink.encoder.generic._
-  import io.findify.clickhousesink.encoder.generic.auto._
-  
-  case class Color(r: Byte, g: Byte, b: Byte)
-  case class Simple(key: String, custom: Color)
-  // Look, mom, it's a typeclass!
-  implicit val colorEncoder = new ScalarEncoder[Color] {
-    override def defaultType: String = "String"
-    override def encodeRaw(value: Color): String = s"'r=${value.r},g=${value.g},b=${value.b}'"
-  }
-  val encoder = deriveEncoder[Simple]
-  encoder.schema("simple", "ENGINE = Memory")
-  // will emit "CREATE TABLE simple (key String,value String) ENGINE = Memory"
-  val instance = Simple("foo", Color(1,2,3)) 
-  // if written via ClickhouseSink, will emit "INSERT INTO simple VALUES ('foo', 'r=1,g=2,b=3')"
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
+import io.findify.clickhouse.ClickhouseClient
+import io.findify.clickhouse.format.decoder.generic._
+import io.findify.clickhouse.format.decoder.generic.auto._
 
+class ReadExample {
+  def main(args: Array[String]): Unit = {
+    implicit val system = ActorSystem.create("clickhouse")
+    implicit val mat = ActorMaterializer()
+    import system.dispatcher
+
+    case class Simple(key: String, value: Int)
+    implicit val decoder = deriveDecoder[Simple]
+
+
+    val client = new ClickhouseClient(host = "localhost", port = 8123)
+    for {
+      ddl <- client.execute("create table simple(key String, value: Int32) ENGINE = Memory")
+      insert <- client.execute("""insert into simple values ("a",1),("b",2)""")
+      rows <- client.query("select * from simple order by value asc").map(_.data.map(_.as[Simple]))
+    } yield {
+      println(rows)
+      // will print: List(Simple("a",1), Simple("b",2))
+    }
+  }
+}
 ```
 
 ## Licence

@@ -20,7 +20,10 @@ object Field {
   private val dateFormat = DateTimeFormat.forPattern("yyyy-MM-dd")
   private val dateTimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss")
   case class Row(fields: Map[String, Field]) extends Field {
-    override def valueTuple(name: String): Seq[(String, Json)] = ???
+    override def valueTuple(name: String): Seq[(String, Json)] = fields.toList.flatMap {
+      case (fieldName, nested: CNested) => nested.valueTuple(fieldName)
+      case (fieldName, other) => other.valueTuple(fieldName)
+    }
     override def value: Json = ???
   }
   case class ScalarRow(fields: Map[String, Field]) extends ScalarField {
@@ -69,15 +72,15 @@ object Field {
     override def valueTuple(name: String): Seq[(String, Json)] = {
       for {
         head <- raw.headOption.toList
-        field <- head.fields.keys
+        fieldName <- head.fields.keys
       } yield {
         val values = for {
           row <- raw
-          fieldValue <- row.fields.get(field)
+          fieldValue <- row.fields.get(fieldName)
         } yield {
           fieldValue.value
         }
-        field -> Json.fromValues(values)
+        s"$name.$fieldName" -> Json.fromValues(values)
       }
     }
   }

@@ -1,5 +1,6 @@
 package io.findify.clickhouse.format
 
+import akka.util.ByteString
 import io.findify.clickhouse.format.input.JSONInputFormat
 import org.scalatest.{FlatSpec, Matchers}
 import sun.nio.cs.StandardCharsets
@@ -69,8 +70,8 @@ class JSONInputFormatTest extends FlatSpec with Matchers {
                     |        "rows_before_limit_at_least": 141137
                     |}
                     |""".stripMargin
-    val response = dec.read(example.getBytes("UTF-8"))
-    response.right.get.size shouldBe 5
+    val response = dec.read(ByteString(example))
+    response.right.get.data.size shouldBe 5
   }
   it should "deal with arrays" in {
     val input =
@@ -121,8 +122,8 @@ class JSONInputFormatTest extends FlatSpec with Matchers {
         |        }
         |}
       """.stripMargin
-    val response = dec.read(input.getBytes("UTF-8"))
-    response.right.get.size shouldBe 1
+    val response = dec.read(ByteString(input))
+    response.right.get.data.size shouldBe 1
   }
 
   it should "work with nulls" in {
@@ -156,7 +157,7 @@ class JSONInputFormatTest extends FlatSpec with Matchers {
                   |                "bytes_read": 22
                   |        }
                   |}""".stripMargin
-    val response = dec.read(input.getBytes("UTF-8"))
-    response.right.get.size shouldBe 1
+    val response = dec.read(ByteString(input))
+    response.right.get.data.size shouldBe 1
   }
 }

@@ -6,7 +6,9 @@ import org.joda.time.{LocalDate, LocalDateTime}
 import shapeless.{HList, HNil, LabelledProductTypeClass, LabelledProductTypeClassCompanion, Lazy}
 
 object generic {
-
+  implicit class AsRow[T <: Product](obj: T) {
+    def asRow(implicit enc: Encoder[T, Field]) = Row(enc.encode("", obj))
+  }
   import io.findify.clickhouse.format.Scalar._
 
   implicit val stringEncoder = new StringEncoder()

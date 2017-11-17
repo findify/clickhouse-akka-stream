@@ -1,3 +1,3 @@
 package io.findify.clickhouse.format
 
-trait ClickhouseError extends Throwable
+abstract class ClickhouseError(msg: String) extends Exception(msg)

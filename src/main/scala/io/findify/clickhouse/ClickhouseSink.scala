@@ -3,35 +3,24 @@ package io.findify.clickhouse
 import akka.Done
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.Uri.Query
 import akka.http.scaladsl.model._
-import akka.stream._
-import akka.stream.stage._
+import akka.stream.{Attributes, Inlet, Materializer, SinkShape}
+import akka.stream.stage.{GraphStageLogic, GraphStageWithMaterializedValue, InHandler, StageLogging}
 import akka.util.ByteString
-import io.findify.clickhouse.ClickhouseSink.Options
-import io.findify.clickhouse.encoder.Encoder
-
-import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.duration.Duration
-import scala.concurrent.duration._
-import io.findify.clickhouse.field._
+import io.findify.clickhouse.format.Field.Row
+import io.findify.clickhouse.format.output.OutputFormat
 
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success, Try}
-import scala.util.parsing.json.JSONArray
 
-class ClickhouseSink[T]
+class ClickhouseSink(host: String, port: Int, table: String, format: OutputFormat)
 (
-  host: String,
-  port: Int,
-  table: String,
-  options: ClickhouseSink.Options = Options()
-)(
   implicit val system: ActorSystem,
-  mat: Materializer,
-  encoder: Encoder[T]
-) extends GraphStageWithMaterializedValue[SinkShape[Seq[T]], Future[Done]] {
-  val in: Inlet[Seq[T]] = Inlet("input")
-  override val shape: SinkShape[Seq[T]] = SinkShape(in)
+  mat: Materializer
+) extends GraphStageWithMaterializedValue[SinkShape[Seq[Row]], Future[Done]] {
+  val in: Inlet[Seq[Row]] = Inlet("input")
+  override val shape: SinkShape[Seq[Row]] = SinkShape(in)
 
   override def createLogicAndMaterializedValue(inheritedAttributes: Attributes): (GraphStageLogic, Future[Done]) = {
     val promise = Promise[Done]
@@ -54,27 +43,24 @@ class ClickhouseSink[T]
       setHandler(in, new InHandler {
         override def onPush(): Unit = {
           val items = grab(in)
-          val blobs = items.map(item => ClickhouseSink.flatten(encoder.encode(item)))
-          flush(blobs).onComplete(pullCallback.invoke)
+          flush(items).onComplete(pullCallback.invoke)
         }
 
         override def onUpstreamFinish(): Unit = {
-          log.info("done")
+          log.info("stream completed")
           promise.success(Done)
           completeStage()
         }
       })
-      def flush(inserts: Seq[String]): Future[Done] = {
-        val data = inserts.mkString(s"INSERT INTO $table values ", ",", "")
-        log.info(data)
+      def flush(inserts: Seq[Row]): Future[Done] = {
         http.singleRequest(HttpRequest(
           method = HttpMethods.POST,
-          uri = Uri(s"http://$host:$port/"),
-          entity = data)
+          uri = Uri(s"http://$host:$port/").withQuery(Query(Map("query" -> s"INSERT INTO $table FORMAT ${format.name}"))),
+          entity = inserts.foldLeft(ByteString(""))( (bytes, row) => bytes ++ format.write(row)))
         ).flatMap {
           case HttpResponse(StatusCodes.OK, _, entity, _) =>
             entity.dataBytes.runFold(ByteString(""))(_ ++ _).map(_.utf8String).map(line => {
-              log.info(line)
+              log.info(s"status: OK, batch inserted, size=${inserts.size}")
               Done
             })
           case HttpResponse(code, _, entity, _) =>
@@ -88,24 +74,4 @@ class ClickhouseSink[T]
     }
     (logic, promise.future)
   }
-}
-object ClickhouseSink {
-  case class Options(mapper: CustomMapper = CustomMapper.Noop)
-
-  def flatten(item: Seq[Field]): String = {
-    val merged = item.map {
-      case SimpleField(value) => value
-      //case ArrayField(values) if values.isEmpty => "[]"
-      case ArrayField(values) => values.mkString("[", ",", "]")
-      case NestedTable(rows, _) if rows.nonEmpty =>
-        rows.map(_.values).transpose.map(col => col.map {
-          case SimpleField(value) => value
-          case _ => ???
-        }.mkString("[", ",", "]")).mkString(",")
-      case NestedTable(rows, cnt) =>
-        (0 until cnt).map(_ => "[]").mkString(",")
-    }
-    merged.mkString("(", ",", ")")
-  }
-
 }

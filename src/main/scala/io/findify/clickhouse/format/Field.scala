@@ -1,6 +1,7 @@
 package io.findify.clickhouse.format
 
 import io.circe.{Json, JsonDouble, JsonObject}
+import io.findify.clickhouse.format.decoder.Decoder
 import org.joda.time.format.DateTimeFormat
 import org.joda.time.{LocalDate, LocalDateTime}
 
@@ -20,6 +21,7 @@ object Field {
   private val dateFormat = DateTimeFormat.forPattern("yyyy-MM-dd")
   private val dateTimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss")
   case class Row(fields: Map[String, Field]) extends Field {
+    def as[T](implicit dec: Decoder[T, Field]) = dec.decode("", this)
     override def valueTuple(name: String): Seq[(String, Json)] = fields.toList.flatMap {
       case (fieldName, nested: CNested) => nested.valueTuple(fieldName)
       case (fieldName, other) => other.valueTuple(fieldName)
@@ -110,9 +112,9 @@ object Field {
     case (fixedStringPattern(length), Some(str), _, _) => FixedString(str, length.toInt)
     case ("String", Some(str), _, _) => CString(str)
     case ("UInt8", _, _, Some(num)) => UInt8(num.truncateToByte)
+    case ("Int8", _, _, Some(num)) => Int8(num.truncateToByte)
     case ("UInt32", _, _, Some(num)) => UInt32(num.truncateToInt)
     case ("UInt64", Some(str), _, _) => UInt64(str.toLong)
-    case ("Int8", _, _, Some(num)) => Int8(num.truncateToByte)
     case ("Int32", _, _, Some(num)) => Int32(num.truncateToInt)
     case ("Int64", _, _, Some(num)) => Int64(num.truncateToLong)
     case ("Float32", _, _, Some(num)) => Float32(num.toDouble.floatValue())

@@ -6,15 +6,18 @@ import akka.stream.{ActorMaterializer, ActorMaterializerSettings, Supervision}
 import akka.stream.scaladsl.{Keep, Sink, Source}
 import akka.testkit.{ImplicitSender, TestKit}
 import com.dimafeng.testcontainers.{ForAllTestContainer, GenericContainer}
+import io.findify.clickhouse.format.Field.{Row, UInt32, UInt64}
+import io.findify.clickhouse.format.output.JSONEachRowOutputFormat
 import org.scalatest._
 import org.testcontainers.containers.wait.Wait
+
 import scala.concurrent.duration._
 import scala.concurrent.Await
 
 
-class SinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike with ForAllTestContainer with ImplicitSender with BeforeAndAfterAll {
-  import io.findify.clickhouse.encoder.generic._
-  import io.findify.clickhouse.encoder.generic.auto._
+class SourceSinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike with ForAllTestContainer with ImplicitSender with BeforeAndAfterAll {
+  import io.findify.clickhouse.format.encoder.generic._
+  import io.findify.clickhouse.format.encoder.generic.auto._
 
   override val container = GenericContainer(
     imageName = "yandex/clickhouse-server:1.1.54292",
@@ -22,7 +25,6 @@ class SinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike with 
     waitStrategy = Wait.forHttp("/")
   )
 
-  lazy val client = new Client(container.containerIpAddress, container.container.getMappedPort(8123))
   val sv: Supervision.Decider = {
     case e: Throwable =>
       println("oops", e)
@@ -31,39 +33,47 @@ class SinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike with 
   val settings = ActorMaterializerSettings(system).withSupervisionStrategy(sv)
 
   implicit val mat = ActorMaterializer(settings)
+  lazy val client = new ClickhouseClient(container.containerIpAddress, container.container.getMappedPort(8123))
   override def afterAll(): Unit = {
     super.afterAll()
     TestKit.shutdownActorSystem(system)
   }
 
   it should "make simple queries" in {
-    client.query("SELECT 1").map(result => assert(result == "1\n"))
+    client.execute("SELECT 1").map(result => assert(result == Done))
   }
 
   case class Foo(k: String, b: Int, ts: Option[String])
   implicit val fooEncoder = deriveEncoder[Foo]
   it should "create table schema for dummy batch insert" in {
-    val ddl = fooEncoder.schema("foo", "ENGINE = Memory")
-    client.query(ddl).map(x => assert(x == ""))
+    client.execute("create table foo (k String, b Int32, ts Nullable(String)) ENGINE = Memory;").map(x => assert(x == Done))
   }
 
   it should "insert dummy data there" in {
-    val data = Range(1,10000).map(i => Foo(i.toString, i, None))
+    val data = Range(1,10000).map(i => Foo(i.toString, i, None).asRow)
     val source = Source(data)
-    val sink = Sink.fromGraph(new ClickhouseSink[Foo](
+    val sink = Sink.fromGraph(new ClickhouseSink(
       host = container.containerIpAddress,
       port = container.container.getMappedPort(8123),
-      table = "foo"
+      table = "foo",
+      format = new JSONEachRowOutputFormat()
     ))
     val result = source.grouped(100).runWith(sink)
     result.map(r => assert(r == Done))
   }
 
-  it should "have dummy data in db" in {
-    client.query("SELECT count(*) from foo").map(result => assert(result == "9999\n"))
+  it should "have dummy data in db v1" in {
+    client.query("SELECT count(*) from foo").map(result => assert(result.data.head == Row(Map("count()" -> UInt64(9999)))))
   }
 
-  case class Nested(n: String, suffix: Option[Int])
+  it should "have dummy data in db v2" in {
+    import io.findify.clickhouse.format.decoder.generic._
+    import io.findify.clickhouse.format.decoder.generic.auto._
+    implicit val dec = deriveDecoder[Foo]
+    client.query("SELECT * from foo order by b asc limit 10").map(_.data.map(_.as[Foo](dec))).map(result => assert(result.head == Foo("1", 1, None)))
+  }
+
+  /*case class Nested(n: String, suffix: Option[Int])
   case class Root(k: String, v: Seq[Nested])
   implicit val rootEncoder = deriveEncoder[Root]
   it should "create schema for nested objects" in {
@@ -106,5 +116,5 @@ class SinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike with 
     val source = Source(List(Foo("a", "2017-01-01 00:00:00")))
     val result = source.grouped(1).runWith(sink)
     result.map(r => assert(r == Done))
-  }
+  }*/
 }

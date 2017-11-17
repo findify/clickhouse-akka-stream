@@ -1,4 +1,5 @@
 package io.findify.clickhouse.format.input
+import akka.util.ByteString
 import io.circe.{Decoder, DecodingFailure}
 import io.findify.clickhouse.format
 import io.circe.parser._
@@ -6,6 +7,7 @@ import io.circe.syntax._
 import io.circe.generic.semiauto._
 import io.findify.clickhouse.format.{ClickhouseError, Field}
 import io.findify.clickhouse.format.Field.Row
+import io.findify.clickhouse.format.input.InputFormat.{Response, TableMeta}
 import io.findify.clickhouse.format.input.JSONInputFormat._
 
 class JSONInputFormat extends InputFormat {
@@ -17,6 +19,8 @@ class JSONInputFormat extends InputFormat {
       TableMeta(fields.map(f => f.name -> f.`type`).toMap)
     }
   })
+
+  override def name: String = "JSON"
   implicit def rowDecoder(implicit meta: TableMeta): Decoder[Row] = Decoder.instance(cursor => {
     val cells = (for {
       fields <- cursor.fields.toList
@@ -43,18 +47,16 @@ class JSONInputFormat extends InputFormat {
       case Left(err) => Left(err)
     }
   })
-  override def read(data: Array[Byte]): Either[format.ClickhouseError, Seq[Row]] = {
-    decode[Response](new String(data)) match {
+  override def read(data: ByteString): Either[format.ClickhouseError, Response] = {
+    decode[Response](data.utf8String) match {
       case Left(err) => Left(JsonDecodingError(err))
-      case Right(response) => Right(response.data)
+      case Right(response) => Right(response)
     }
   }
 }
 
 object JSONInputFormat {
   case class FieldType(name: String, `type`: String)
-  case class TableMeta(fields: Map[String,String])
-  case class Response(meta: TableMeta,  data: List[Row], rows: Int)
 
-  case class JsonDecodingError(nested: io.circe.Error) extends ClickhouseError
+  case class JsonDecodingError(nested: io.circe.Error) extends ClickhouseError(nested.getMessage)
 }

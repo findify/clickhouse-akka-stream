@@ -18,7 +18,7 @@ class ReadExample {
 
     val client = new ClickhouseClient(host = "localhost", port = 8123)
     for {
-      ddl <- client.execute("create table simple(key String, value: Int32) ENGINE = Memory")
+      ddl <- client.execute("create table simple(key String, value Int32) ENGINE = Memory")
       insert <- client.execute("""insert into simple values ("a",1),("b",2)""")
       rows <- client.query("select * from simple order by value asc").map(_.data.map(_.as[Simple]))
     } yield {

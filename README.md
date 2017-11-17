@@ -30,6 +30,7 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import io.findify.clickhouse.ClickhouseSink
 import io.findify.clickhouse.format.encoder.generic._
+import io.findify.clickhouse.format.encoder.generic.auto._
 
 
 class WriteExample {

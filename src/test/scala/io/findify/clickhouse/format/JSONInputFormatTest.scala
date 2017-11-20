@@ -1,6 +1,7 @@
 package io.findify.clickhouse.format
 
 import akka.util.ByteString
+import io.findify.clickhouse.format.Field.{CString, Int64, Row, UInt64}
 import io.findify.clickhouse.format.input.JSONInputFormat
 import org.scalatest.{FlatSpec, Matchers}
 import sun.nio.cs.StandardCharsets
@@ -159,5 +160,44 @@ class JSONInputFormatTest extends FlatSpec with Matchers {
                   |}""".stripMargin
     val response = dec.read(ByteString(input))
     response.right.get.data.size shouldBe 1
+  }
+  it should "work with 64-bit ints" in {
+    val input = """{
+                  |        "meta":
+                  |        [
+                  |                {
+                  |                        "name": "key",
+                  |                        "type": "String"
+                  |                },
+                  |                {
+                  |                        "name": "a",
+                  |                        "type": "Int64"
+                  |                },
+                  |                {
+                  |                        "name": "b",
+                  |                        "type": "UInt64"
+                  |                }
+                  |        ],
+                  |
+                  |        "data":
+                  |        [
+                  |                {
+                  |                        "key": "foo",
+                  |                        "a": "123",
+                  |                        "b": "456"
+                  |                }
+                  |        ],
+                  |
+                  |        "rows": 1,
+                  |
+                  |        "statistics":
+                  |        {
+                  |                "elapsed": 0.000334462,
+                  |                "rows_read": 1,
+                  |                "bytes_read": 22
+                  |        }
+                  |}""".stripMargin
+    val response = dec.read(ByteString(input))
+    response.right.get.data shouldBe List(Row(Map("key" -> CString("foo"), "a" -> Int64(123), "b" -> UInt64(456))))
   }
 }

@@ -114,9 +114,9 @@ object Field {
     case ("UInt8", _, _, Some(num)) => UInt8(num.truncateToByte)
     case ("Int8", _, _, Some(num)) => Int8(num.truncateToByte)
     case ("UInt32", _, _, Some(num)) => UInt32(num.truncateToInt)
-    case ("UInt64", Some(str), _, _) => UInt64(str.toLong)
     case ("Int32", _, _, Some(num)) => Int32(num.truncateToInt)
-    case ("Int64", _, _, Some(num)) => Int64(num.truncateToLong)
+    case ("UInt64", Some(str), _, _) => UInt64(str.toLong)
+    case ("Int64", Some(str), _, _) => Int64(str.toLong)
     case ("Float32", _, _, Some(num)) => Float32(num.toDouble.floatValue())
     case ("Float64", _, _, Some(num)) => Float64(num.toDouble)
   }

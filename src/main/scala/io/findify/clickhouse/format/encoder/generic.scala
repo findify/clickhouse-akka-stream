@@ -17,7 +17,7 @@ object generic {
   implicit val dateEncoder = new DateEncoder()
   implicit val dateTimeEncoder = new DateTimeEncoder()
   implicit val floatEncoder = new FloatEncoder()
-  implicit val doubleEncoder = new FloatEncoder()
+  implicit val doubleEncoder = new DoubleEncoder()
   implicit val longEncoder = new LongEncoder()
   implicit def optionEncoder[T, F <: ScalarField](implicit enc: ScalarEncoder[T,F], s: Scalar[T]): Encoder[Option[T], Nullable[F]] = new OptionEncoder[T,F]()
   implicit def arrayEncoder[T, F <: ScalarField](implicit enc: ScalarEncoder[T,F], s: Scalar[T]): Encoder[Seq[T], CArray[F]] = new ArrayEncoder[T,F]()

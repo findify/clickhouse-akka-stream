@@ -8,6 +8,7 @@ import akka.stream.scaladsl.Source
 import akka.stream.{Materializer, Outlet, SourceShape}
 import akka.stream.stage.GraphStage
 import akka.util.ByteString
+import com.typesafe.scalalogging.LazyLogging
 import io.findify.clickhouse.ClickhouseClient.QueryError
 import io.findify.clickhouse.format.ClickhouseError
 import io.findify.clickhouse.format.Field.Row
@@ -17,11 +18,13 @@ import io.findify.clickhouse.format.output.OutputFormat
 
 import scala.concurrent.Future
 
-class ClickhouseClient(host: String, port: Int, format: InputFormat = new JSONInputFormat())(implicit val sys: ActorSystem, mat: Materializer) {
+class ClickhouseClient(host: String, port: Int, format: InputFormat = new JSONInputFormat())(implicit val sys: ActorSystem, mat: Materializer) extends LazyLogging {
   private val http = Http()
 
   def query(str: String): Future[Response] = {
+
     import sys.dispatcher
+    logger.debug(s"request: $str")
     http.singleRequest(
       HttpRequest(
         method = HttpMethods.POST,
@@ -29,14 +32,24 @@ class ClickhouseClient(host: String, port: Int, format: InputFormat = new JSONIn
         entity = s"$str FORMAT ${format.name}"
       )
     ).flatMap {
-      case HttpResponse(StatusCodes.OK, _, HttpEntity.Strict(_, bytes), _) => asFuture(format.read(bytes))
-      case HttpResponse(StatusCodes.OK, _, entity, _) => entity.dataBytes.runFold(ByteString(""))(_ ++ _).flatMap(bytes => asFuture(format.read(bytes)))
-      case HttpResponse(code, _, entity, _) => entity.dataBytes.runFold(ByteString(""))(_ ++ _).flatMap(bytes => Future.failed(QueryError(bytes.utf8String)))
+      case HttpResponse(StatusCodes.OK, _, HttpEntity.Strict(_, bytes), _) =>
+        logger.debug(s"response: ${bytes.utf8String}")
+        asFuture(format.read(bytes))
+      case HttpResponse(StatusCodes.OK, _, entity, _) =>
+        entity.dataBytes.runFold(ByteString(""))(_ ++ _).flatMap(bytes => {
+          logger.debug(s"response: ${bytes.utf8String}")
+          asFuture(format.read(bytes))
+        })
+      case HttpResponse(code, _, entity, _) => entity.dataBytes.runFold(ByteString(""))(_ ++ _).flatMap(bytes => {
+        logger.debug(s"response: ${bytes.utf8String}")
+        Future.failed(QueryError(bytes.utf8String))
+      })
     }
   }
 
   def execute(str: String): Future[Done] = {
     import sys.dispatcher
+    logger.debug(s"request: $str")
     http.singleRequest(
       HttpRequest(
         method = HttpMethods.POST,
@@ -44,9 +57,15 @@ class ClickhouseClient(host: String, port: Int, format: InputFormat = new JSONIn
         entity = str
       )
     ).flatMap {
-      case HttpResponse(StatusCodes.OK, _, HttpEntity.Strict(_, bytes), _) => Future.successful(Done)
-      case HttpResponse(StatusCodes.OK, _, entity, _) => entity.dataBytes.runFold(ByteString(""))(_ ++ _).map(_ => Done)
+      case HttpResponse(StatusCodes.OK, _, HttpEntity.Strict(_, bytes), _) =>
+        logger.debug(s"response: ${bytes.utf8String}")
+        Future.successful(Done)
+      case HttpResponse(StatusCodes.OK, _, entity, _) => entity.dataBytes.runFold(ByteString(""))(_ ++ _).map(bytes => {
+        logger.debug(s"response: ${bytes.utf8String}")
+        Done
+      })
       case HttpResponse(code, _, entity, _) => entity.dataBytes.runFold(ByteString(""))(_ ++ _).flatMap(err => {
+        logger.debug(s"response: ${err.utf8String}")
         Future.failed(QueryError(err.utf8String))
       })
     }

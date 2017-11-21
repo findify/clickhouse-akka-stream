@@ -14,7 +14,7 @@ class AutoDecoderTest extends FlatSpec with Matchers {
     dec.decode("", data) shouldBe Simple("a", 1)
   }
   it should "derive for rich objects" in {
-    case class RichBitch(a: Byte, b: Boolean, c: Seq[Byte], d: LocalDate, e: LocalDateTime, f: Seq[LocalDate], g: Long, h: Double, i: Float)
+    case class RichBitch(a: Byte, b: Boolean, c: Seq[Byte], d: LocalDate, e: LocalDateTime, f: Seq[LocalDate], g: Long, h: Double, i: Float, j: Double)
     val dec = deriveDecoder[RichBitch]
   }
 }

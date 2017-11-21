@@ -1,8 +1,9 @@
 package io.findify.clickhouse.format
 
 import akka.util.ByteString
-import io.findify.clickhouse.format.Field.{CString, Int64, Row, UInt64}
+import io.findify.clickhouse.format.Field._
 import io.findify.clickhouse.format.input.JSONInputFormat
+import org.joda.time.{LocalDate, LocalDateTime}
 import org.scalatest.{FlatSpec, Matchers}
 import sun.nio.cs.StandardCharsets
 
@@ -199,5 +200,46 @@ class JSONInputFormatTest extends FlatSpec with Matchers {
                   |}""".stripMargin
     val response = dec.read(ByteString(input))
     response.right.get.data shouldBe List(Row(Map("key" -> CString("foo"), "a" -> Int64(123), "b" -> UInt64(456))))
+  }
+
+  it should "work with dates" in {
+    val input = """{
+                  |        "meta":
+                  |        [
+                  |                {
+                  |                        "name": "key",
+                  |                        "type": "String"
+                  |                },
+                  |                {
+                  |                        "name": "a",
+                  |                        "type": "Date"
+                  |                },
+                  |                {
+                  |                        "name": "b",
+                  |                        "type": "DateTime"
+                  |                }
+                  |        ],
+                  |
+                  |        "data":
+                  |        [
+                  |                {
+                  |                        "key": "foo",
+                  |                        "a": "2017-01-01",
+                  |                        "b": "2017-01-01 00:00:01"
+                  |                }
+                  |        ],
+                  |
+                  |        "rows": 1,
+                  |
+                  |        "statistics":
+                  |        {
+                  |                "elapsed": 0.000334462,
+                  |                "rows_read": 1,
+                  |                "bytes_read": 22
+                  |        }
+                  |}""".stripMargin
+    val response = dec.read(ByteString(input))
+    response.right.get.data shouldBe List(Row(Map("key" -> CString("foo"), "a" -> CDate(new LocalDate(2017, 1, 1)), "b" -> CDateTime(new LocalDateTime(2017, 1, 1, 0, 0, 1)))))
+
   }
 }

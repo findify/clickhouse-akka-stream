@@ -119,5 +119,7 @@ object Field {
     case ("Int64", Some(str), _, _) => Int64(str.toLong)
     case ("Float32", _, _, Some(num)) => Float32(num.toDouble.floatValue())
     case ("Float64", _, _, Some(num)) => Float64(num.toDouble)
+    case ("DateTime", Some(str), _, _) => CDateTime(LocalDateTime.parse(str, dateTimeFormat))
+    case ("Date", Some(str), _, _) => CDate(LocalDate.parse(str, dateFormat))
   }
 }

@@ -1,12 +1,12 @@
 name := "clickhouse-akka-stream"
-version := "0.3.1"
+version := "0.3.3"
 organization := "io.findify"
 licenses := Seq("MIT" -> url("https://opensource.org/licenses/MIT"))
 homepage := Some(url("https://github.com/findify/clickhouse-akka-stream"))
 
 scalaVersion := "2.12.4"
 
-lazy val akkaVersion = "2.5.7"
+lazy val akkaVersion = "2.5.6"
 lazy val akkaHttpVersion = "10.0.10"
 
 libraryDependencies ++= Seq(

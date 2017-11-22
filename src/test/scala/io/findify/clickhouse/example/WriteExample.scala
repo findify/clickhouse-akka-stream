@@ -19,7 +19,6 @@ class WriteExample {
     // create table simple(key String, value: Int32) ENGINE = Memory
     val source = Source(List(Simple("a", 1), Simple("b", 2), Simple("c", 3)))
       .map(_.asRow)
-      .grouped(100)
     val sink = Sink.fromGraph(new ClickhouseSink(
       host = "localhost",
       port = 8123,

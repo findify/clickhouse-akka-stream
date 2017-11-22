@@ -58,7 +58,7 @@ class SourceSinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike
       table = "foo",
       format = new JSONEachRowOutputFormat()
     ))
-    val result = source.grouped(100).runWith(sink)
+    val result = source.runWith(sink)
     result.map(r => assert(r == Done))
   }
 

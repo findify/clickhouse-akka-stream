@@ -20,48 +20,19 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success, Try}
 
-class ClickhouseSink(host: String, port: Int, table: String, format: OutputFormat = new JSONEachRowOutputFormat(), maxRowsInBuffer: Int = 2048)
+case class ClickhouseSink(host: String, port: Int, table: String, format: OutputFormat = new JSONEachRowOutputFormat(), maxRowsInBuffer: Int = 2048)
 (
   implicit val system: ActorSystem,
   mat: Materializer
-) extends GraphStageWithMaterializedValue[SinkShape[Row], Future[Done]] with LazyLogging {
+) extends GraphStageWithMaterializedValue[SinkShape[Row], Future[Done]] with ClickhouseStream {
   val in: Inlet[Row] = Inlet("input")
   override val shape: SinkShape[Row] = SinkShape(in)
-
-  class FileBuffer {
-    var tempFile = File.createTempFile("clickhouse", table)
-    var tempStream = new FileOutputStream(tempFile)
-    var size: Long = 0
-
-    def append(row: Row): Unit = {
-      val bytes = format.write(row).toArray
-      tempStream.write(bytes)
-      size += 1
-    }
-
-    def isFull: Boolean = size >= maxRowsInBuffer
-    def stream: Source[ByteString, _] = {
-      tempStream.close()
-      StreamConverters.fromInputStream(() => new FileInputStream(tempFile))
-    }
-    def reset = {
-      tempFile.delete()
-      size = 0
-      tempFile = File.createTempFile("clickhouse", table)
-      tempStream = new FileOutputStream(tempFile)
-    }
-
-    def close = {
-      tempStream.close()
-      tempFile.delete()
-    }
-  }
 
   override def createLogicAndMaterializedValue(inheritedAttributes: Attributes): (GraphStageLogic, Future[Done]) = {
     val promise = Promise[Done]
     val logic = new GraphStageLogic(shape) with StageLogging {
       val http = Http(system)
-      val buffer = new FileBuffer()
+      val buffer = new FileBuffer[Nothing](table, format, maxRowsInBuffer)
       import system.dispatcher
 
       override def preStart(): Unit = pull(in)
@@ -108,28 +79,6 @@ class ClickhouseSink(host: String, port: Int, table: String, format: OutputForma
         }
       })
 
-      def flush(stream: Source[ByteString, _]): Future[Done] = {
-        val query = s"INSERT INTO $table FORMAT ${format.name}"
-        logger.debug(s"query: $query")
-        http.singleRequest(HttpRequest(
-          method = HttpMethods.POST,
-          uri = Uri(s"http://$host:$port/").withQuery(Query(Map("query" -> query))),
-          entity = HttpEntity(ContentTypes.`application/json`, stream)
-        )).flatMap {
-          case HttpResponse(StatusCodes.OK, _, entity, _) =>
-            entity.dataBytes.runFold(ByteString(""))(_ ++ _).map(_.utf8String).map(line => {
-              logger.info(s"status: OK, batch inserted: $line")
-              Done
-            })
-          case HttpResponse(code, _, entity, _) =>
-            entity.dataBytes.runFold(ByteString(""))(_ ++ _).map(_.utf8String).map(line => {
-              logger.debug(s"query: $query")
-              logger.error(line)
-              throw new IllegalArgumentException(s"non-200 ($code) response from clickhouse")
-            })
-        }
-
-      }
     }
     (logic, promise.future)
   }

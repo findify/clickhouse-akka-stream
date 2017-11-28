@@ -3,10 +3,11 @@ package io.findify.clickhouse
 import akka.Done
 import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings, Supervision}
-import akka.stream.scaladsl.{Keep, Sink, Source}
+import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.testkit.{ImplicitSender, TestKit}
 import com.dimafeng.testcontainers.{ForAllTestContainer, GenericContainer}
-import io.findify.clickhouse.format.Field.{Row, UInt32, UInt64}
+import io.findify.clickhouse.ClickhouseFlow.Record
+import io.findify.clickhouse.format.Field.{CString, Row, UInt32, UInt64}
 import io.findify.clickhouse.format.output.JSONEachRowOutputFormat
 import org.scalatest._
 import org.testcontainers.containers.wait.Wait
@@ -45,6 +46,7 @@ class SourceSinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike
 
   case class Foo(k: String, b: Int, ts: Option[String])
   implicit val fooEncoder = deriveEncoder[Foo]
+
   it should "create table schema for dummy batch insert" in {
     client.execute("create table foo (k String, b Int32, ts Nullable(String)) ENGINE = Memory;").map(x => assert(x == Done))
   }
@@ -71,6 +73,23 @@ class SourceSinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike
     import io.findify.clickhouse.format.decoder.generic.auto._
     implicit val dec = deriveDecoder[Foo]
     client.query("SELECT * from foo order by b asc limit 10").map(_.data.map(_.as[Foo](dec))).map(result => assert(result.head == Foo("1", 1, None)))
+  }
+
+  it should "create table schema for flow insert" in {
+    client.execute("create table flow (k String, b Int32) ENGINE = Memory;").map(x => assert(x == Done))
+  }
+
+  it should "insert dummy data via flow" in {
+    val data = Range(1,10000).map(i => Record(Row(Map("k" -> CString(i.toString), "b" -> UInt32(i))), i))
+    val source = Source(data)
+    val flow = Flow.fromGraph(ClickhouseFlow[Int](
+      host = container.containerIpAddress,
+      port = container.container.getMappedPort(8123),
+      table = "flow",
+      format = new JSONEachRowOutputFormat()
+    ))
+    val result = source.via(flow).runWith(Sink.foreach(x => println(x.passThrough.size)))
+    result.map(r => assert(r == Done))
   }
 
   /*case class Nested(n: String, suffix: Option[Int])

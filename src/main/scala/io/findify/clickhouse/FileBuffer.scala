@@ -29,6 +29,7 @@ class FileBuffer[T](table: String, format: OutputFormat, maxRowsInBuffer: Int) {
   def passThrough: Seq[T] = passThroughBuffer.toList
 
   def isFull: Boolean = size >= maxRowsInBuffer
+  def isEmpty: Boolean = size == 0
   def stream: Source[ByteString, _] = {
     tempStream.close()
     StreamConverters.fromInputStream(() => new FileInputStream(tempFile))

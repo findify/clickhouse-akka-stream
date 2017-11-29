@@ -15,11 +15,12 @@ import com.typesafe.scalalogging.LazyLogging
 import io.findify.clickhouse.ClickhouseFlow.{Record, Status}
 import io.findify.clickhouse.format.Field.Row
 import io.findify.clickhouse.format.output.{JSONEachRowOutputFormat, OutputFormat}
-
+import scala.concurrent.duration._
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success, Try}
 
-case class ClickhouseFlow[T](host: String, port: Int, table: String, format: OutputFormat = new JSONEachRowOutputFormat(), maxRowsInBuffer: Int = 2048)
+case class ClickhouseFlow[T](host: String, port: Int, table: String, format: OutputFormat = new JSONEachRowOutputFormat(), maxRowsInBuffer: Int = 2048, flushInterval: FiniteDuration = 10.minutes)
                     (
                       implicit val system: ActorSystem,
                       mat: Materializer
@@ -31,7 +32,10 @@ case class ClickhouseFlow[T](host: String, port: Int, table: String, format: Out
   override def createLogic(inheritedAttributes: Attributes) = {
     new GraphStageLogic(shape) with StageLogging {
       val buffer = new FileBuffer[T](table, format, maxRowsInBuffer)
+      var lastFlush = System.currentTimeMillis().millis
       import system.dispatcher
+
+
 
       override def preStart(): Unit = {
         setKeepGoing(true)
@@ -46,6 +50,7 @@ case class ClickhouseFlow[T](host: String, port: Int, table: String, format: Out
           logger.debug("flush complete")
           push(out, Status(buffer.passThrough))
           buffer.reset
+          lastFlush = System.currentTimeMillis().millis
         case Failure(ex) =>
           logger.error("cannot flush", ex)
           buffer.close
@@ -75,8 +80,10 @@ case class ClickhouseFlow[T](host: String, port: Int, table: String, format: Out
         override def onPush(): Unit = {
           val items = grab(in)
           buffer.append(items.row, items.passThrough)
-          if (buffer.isFull) {
-            logger.debug(s"buffer is full (rows = ${buffer.size}), flushing")
+          val now = System.currentTimeMillis().millis
+          val diff = now - lastFlush
+          if (!buffer.isEmpty && (buffer.isFull || (diff > flushInterval))) {
+            logger.debug(s"flush [full = ${buffer.isFull}] [now=$now, last=$lastFlush, diff=$diff] (rows = ${buffer.size})")
             flush(buffer.stream).onComplete(pullCallback.invoke)
           } else {
             //logger.debug("onPush: pull(in)")
@@ -87,7 +94,13 @@ case class ClickhouseFlow[T](host: String, port: Int, table: String, format: Out
 
         override def onUpstreamFinish(): Unit = {
           logger.debug(s"upstream done, last flush (rows = ${buffer.size})")
-          flush(buffer.stream).onComplete(finishCallbach.invoke)
+          if (!buffer.isEmpty) {
+            flush(buffer.stream).onComplete(finishCallbach.invoke)
+          } else {
+            logger.debug("empty last flush done, completing")
+            completeStage()
+            buffer.close
+          }
         }
       })
 

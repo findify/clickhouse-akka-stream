@@ -92,6 +92,21 @@ class SourceSinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike
     result.map(r => assert(r == Done))
   }
 
+  it should "insert data via periodic flush" in {
+    val data = Range(1,10000).map(i => Record(Row(Map("k" -> CString(i.toString), "b" -> UInt32(i))), i))
+    val source = Source(data)
+    val flow = Flow.fromGraph(ClickhouseFlow[Int](
+      host = container.containerIpAddress,
+      port = container.container.getMappedPort(8123),
+      table = "flow",
+      format = new JSONEachRowOutputFormat(),
+      maxRowsInBuffer = 100000,
+      flushInterval = 10.millis
+    ))
+    val result = source.via(flow).runWith(Sink.foreach(x => println(x.passThrough.size)))
+    result.map(r => assert(r == Done))
+  }
+
   /*case class Nested(n: String, suffix: Option[Int])
   case class Root(k: String, v: Seq[Nested])
   implicit val rootEncoder = deriveEncoder[Root]

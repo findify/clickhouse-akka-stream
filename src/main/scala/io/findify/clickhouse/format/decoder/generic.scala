@@ -20,7 +20,7 @@ object generic {
   implicit def optionDecoder[T, F <: ScalarField](implicit dec: Decoder[T,F], s: Scalar[T]): Decoder[Option[T], Nullable[F]] = new OptionEncoder[T, F]()
 
   type RowDecoder[T] = Decoder[T, _ <: Field]
-  def deriveDecoder[T](implicit dec: Lazy[RowDecoder[T]]) = dec.value
+  def deriveDecoder[T](implicit dec: RowDecoder[T]) = dec
 
   object auto extends LabelledProductTypeClassCompanion[RowDecoder] {
     object typeClass extends LabelledProductTypeClass[RowDecoder] {

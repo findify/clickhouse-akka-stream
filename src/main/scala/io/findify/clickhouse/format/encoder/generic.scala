@@ -23,7 +23,7 @@ object generic {
   implicit def arrayEncoder[T, F <: ScalarField](implicit enc: ScalarEncoder[T,F], s: Scalar[T]): Encoder[Seq[T], CArray[F]] = new ArrayEncoder[T,F]()
   implicit def nestedEncoder[T <: Product, F <: Field](implicit enc: Encoder[T, F]): Encoder[Seq[T], CNested] = new NestedEncoder()
 
-  def deriveEncoder[T](implicit enc: Lazy[RowEncoder[T]]) = enc.value
+  def deriveEncoder[T](implicit enc: RowEncoder[T]) = enc
   type RowEncoder[T] = Encoder[T, _ <: Field]
 
   object auto extends LabelledProductTypeClassCompanion[RowEncoder] {

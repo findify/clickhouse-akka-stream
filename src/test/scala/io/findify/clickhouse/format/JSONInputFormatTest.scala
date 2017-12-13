@@ -280,4 +280,41 @@ class JSONInputFormatTest extends FlatSpec with Matchers {
     val response = dec.read(ByteString(input)).right.get
     response.data shouldBe List(Row(Map("d" -> CDate(new LocalDate(2017,1,1)), "dt" -> CDateTime(new LocalDateTime(2017,1,1,1,1,1)))))
   }
+
+  it should "decode nullable strings" in {
+    val input = """{
+                  |        "meta":
+                  |        [
+                  |                {
+                  |                        "name": "search:count",
+                  |                        "type": "UInt64"
+                  |                },
+                  |                {
+                  |                        "name": "search:query",
+                  |                        "type": "Nullable(String)"
+                  |                }
+                  |        ],
+                  |
+                  |        "data":
+                  |        [
+                  |                {
+                  |                        "search:count": "103",
+                  |                        "search:query": null
+                  |                }
+                  |        ],
+                  |
+                  |        "rows": 1,
+                  |
+                  |        "rows_before_limit_at_least": 121,
+                  |
+                  |        "statistics":
+                  |        {
+                  |                "elapsed": 0.005706054,
+                  |                "rows_read": 93841,
+                  |                "bytes_read": 5517950
+                  |        }
+                  |}""".stripMargin
+    val response = dec.read(ByteString(input)).right.get
+    response.data shouldBe List(Row(Map("search:count" -> UInt64(103), "search:query" -> Nullable(Option.empty[CString]))))
+  }
 }

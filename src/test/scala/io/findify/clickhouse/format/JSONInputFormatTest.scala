@@ -2,6 +2,7 @@ package io.findify.clickhouse.format
 
 import akka.util.ByteString
 import io.findify.clickhouse.format.Field._
+import io.findify.clickhouse.format.input.InputFormat.Statistics
 import io.findify.clickhouse.format.input.JSONInputFormat
 import org.joda.time.{LocalDate, LocalDateTime}
 import org.scalatest.{FlatSpec, Matchers}
@@ -74,6 +75,7 @@ class JSONInputFormatTest extends FlatSpec with Matchers {
                     |""".stripMargin
     val response = dec.read(ByteString(example))
     response.right.get.data.size shouldBe 5
+    response.right.get.rowsBeforeLimit shouldBe Some(141137)
   }
   it should "deal with arrays" in {
     val input =
@@ -240,6 +242,8 @@ class JSONInputFormatTest extends FlatSpec with Matchers {
                   |}""".stripMargin
     val response = dec.read(ByteString(input))
     response.right.get.data shouldBe List(Row(Map("key" -> CString("foo"), "a" -> CDate(new LocalDate(2017, 1, 1)), "b" -> CDateTime(new LocalDateTime(2017, 1, 1, 0, 0, 1)))))
+    response.right.get.rows shouldBe 1
+    response.right.get.statistics shouldBe Some(Statistics(0.000334462, 1, 22))
 
   }
 }

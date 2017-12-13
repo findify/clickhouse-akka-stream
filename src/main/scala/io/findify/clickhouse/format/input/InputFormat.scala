@@ -12,6 +12,7 @@ trait InputFormat {
 }
 
 object InputFormat {
+  case class Statistics(elapsed: Double, rows_read: Int, bytes_read: Int)
   case class TableMeta(fields: Map[String,String])
-  case class Response(meta: TableMeta,  data: List[Row], rows: Int)
+  case class Response(meta: TableMeta,  data: List[Row], rows: Int, statistics: Option[Statistics], rowsBeforeLimit: Option[Int])
 }

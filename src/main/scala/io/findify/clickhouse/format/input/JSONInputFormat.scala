@@ -7,7 +7,7 @@ import io.circe.syntax._
 import io.circe.generic.semiauto._
 import io.findify.clickhouse.format.{ClickhouseError, Field}
 import io.findify.clickhouse.format.Field.Row
-import io.findify.clickhouse.format.input.InputFormat.{Response, TableMeta}
+import io.findify.clickhouse.format.input.InputFormat.{Response, Statistics, TableMeta}
 import io.findify.clickhouse.format.input.JSONInputFormat._
 
 class JSONInputFormat extends InputFormat {
@@ -36,13 +36,18 @@ class JSONInputFormat extends InputFormat {
       Left(DecodingFailure("cannot decode all the fields", cursor.history))
     }
   })
+  implicit val statsDecoder: Decoder[Statistics] = deriveDecoder[Statistics]
   implicit val responseDecoder: Decoder[Response] = Decoder.instance(cursor => {
     cursor.downField("meta").as[TableMeta] match {
       case Right(meta) =>
         implicit val imeta = meta
-        cursor.downField("data").as[List[Row]] match {
-          case Right(rows) => Right(Response(meta, rows, 0))
-          case Left(err) => Left(err)
+        for {
+          data <- cursor.downField("data").as[List[Row]]
+          rows <- cursor.downField("rows").as[Int]
+          rowsBeforeLimit <- cursor.downField("rows_before_limit_at_least").as[Option[Int]]
+          stats <- cursor.downField("statistics").as[Option[Statistics]]
+        } yield {
+          Response(meta, data, rows, stats, rowsBeforeLimit)
         }
       case Left(err) => Left(err)
     }

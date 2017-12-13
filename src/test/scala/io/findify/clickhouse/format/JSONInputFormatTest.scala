@@ -244,6 +244,40 @@ class JSONInputFormatTest extends FlatSpec with Matchers {
     response.right.get.data shouldBe List(Row(Map("key" -> CString("foo"), "a" -> CDate(new LocalDate(2017, 1, 1)), "b" -> CDateTime(new LocalDateTime(2017, 1, 1, 0, 0, 1)))))
     response.right.get.rows shouldBe 1
     response.right.get.statistics shouldBe Some(Statistics(0.000334462, 1, 22))
+  }
 
+  it should "correctly decode dates and datetimes" in {
+    val input = """{
+                  |        "meta":
+                  |        [
+                  |                {
+                  |                        "name": "d",
+                  |                        "type": "Date"
+                  |                },
+                  |                {
+                  |                        "name": "dt",
+                  |                        "type": "DateTime"
+                  |                }
+                  |        ],
+                  |
+                  |        "data":
+                  |        [
+                  |                {
+                  |                        "d": "2017-01-01",
+                  |                        "dt": "2017-01-01 01:01:01"
+                  |                }
+                  |        ],
+                  |
+                  |        "rows": 1,
+                  |
+                  |        "statistics":
+                  |        {
+                  |                "elapsed": 0.000251193,
+                  |                "rows_read": 1,
+                  |                "bytes_read": 6
+                  |        }
+                  |}""".stripMargin
+    val response = dec.read(ByteString(input)).right.get
+    response.data shouldBe List(Row(Map("d" -> CDate(new LocalDate(2017,1,1)), "dt" -> CDateTime(new LocalDateTime(2017,1,1,1,1,1)))))
   }
 }

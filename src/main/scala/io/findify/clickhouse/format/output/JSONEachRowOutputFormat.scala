@@ -10,6 +10,7 @@ class JSONEachRowOutputFormat extends OutputFormat {
   override def name: String = "JSONEachRow"
   override def write(value: Row): ByteString = {
     val json = Json.fromJsonObject(JsonObject.fromIterable(value.valueTuple("")))
+    //logger.info(json.noSpaces)
     ByteString(json.noSpaces) ++ ByteString("\n")
   }
 }

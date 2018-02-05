@@ -46,7 +46,13 @@ object Field {
   case class Int8(raw: Byte) extends ByteNumber {
     override def value: Json = Json.fromInt(raw)
   }
-  case class UInt8(raw: Byte) extends ByteNumber {
+  case class UInt8(raw: Int) extends IntNumber {
+    override def value: Json = Json.fromInt(raw)
+  }
+  case class Int16(raw: Int) extends IntNumber {
+    override def value: Json = Json.fromInt(raw)
+  }
+  case class UInt16(raw: Int) extends IntNumber {
     override def value: Json = Json.fromInt(raw)
   }
   case class Int32(raw: Int) extends IntNumber {
@@ -55,8 +61,8 @@ object Field {
   case class Int64(raw: Long) extends LongNumber {
     override def value: Json = Json.fromLong(raw)
   }
-  case class UInt32(raw: Int) extends IntNumber {
-    override def value: Json = Json.fromInt(raw)
+  case class UInt32(raw: Long) extends LongNumber {
+    override def value: Json = Json.fromLong(raw)
   }
   case class UInt64(raw: Long) extends LongNumber {
     override def value: Json = Json.fromLong(raw)
@@ -69,9 +75,22 @@ object Field {
   }
   case class Float32(raw: Float) extends ScalarField {
     override def value: Json = Json.fromFloatOrNull(raw)
+
+    override def equals(o: scala.Any): Boolean = o match {
+      case Float32(other) =>
+        val thisE = math.ulp(raw)
+        val thatE = math.ulp(other)
+        thisE == thatE
+    }
   }
   case class Float64(raw: Double) extends ScalarField {
     override def value: Json = Json.fromDoubleOrNull(raw)
+    override def equals(o: scala.Any): Boolean = o match {
+      case Float64(other) =>
+        val thisE = math.ulp(raw)
+        val thatE = math.ulp(other)
+        thisE == thatE
+    }
   }
   case class CNested(raw: Seq[ScalarRow]) extends Field {
     override def value: Json = ???
@@ -98,6 +117,11 @@ object Field {
       case Some(in) => in.value
       case None => Json.Null
     }
+
+    override def valueTuple(name: String): Seq[(String, Json)] = raw match {
+      case None => Nil
+      case Some(in) => List(name -> value)
+    }
   }
   val fixedStringPattern = "FixedString\\(([0-9]+)\\)".r
   val arrayPattern = "Array\\(([0-9a-zA-Z\\(\\)]+)\\)".r
@@ -111,10 +135,12 @@ object Field {
   def applyScalar[T](tpe: String, value: Json): ScalarField = (tpe, value.asString, value.asArray, value.asNumber) match {
     case (fixedStringPattern(length), Some(str), _, _) => FixedString(str, length.toInt)
     case ("String", Some(str), _, _) => CString(str)
-    case ("UInt8", _, _, Some(num)) => UInt8(num.truncateToByte)
-    case ("Int8", _, _, Some(num)) => Int8(num.truncateToByte)
-    case ("UInt32", _, _, Some(num)) => UInt32(num.truncateToInt)
-    case ("Int32", _, _, Some(num)) => Int32(num.truncateToInt)
+    case ("UInt8", _, _, Some(num)) => UInt8(num.toInt.getOrElse(0))
+    case ("Int8", _, _, Some(num)) => Int8(num.toByte.getOrElse(0))
+    case ("UInt16", _, _, Some(num)) => UInt16(num.toInt.getOrElse(0))
+    case ("Int16", _, _, Some(num)) => Int16(num.toInt.getOrElse(0))
+    case ("UInt32", _, _, Some(num)) => UInt32(num.toLong.getOrElse(0L))
+    case ("Int32", _, _, Some(num)) => Int32(num.toInt.getOrElse(0))
     case ("UInt64", Some(str), _, _) => UInt64(str.toLong)
     case ("Int64", Some(str), _, _) => Int64(str.toLong)
     case ("Float32", _, _, Some(num)) => Float32(num.toDouble.floatValue())

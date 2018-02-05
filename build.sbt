@@ -1,13 +1,13 @@
 name := "clickhouse-akka-stream"
-version := "0.4.1"
+version := "0.4.2-M4"
 organization := "io.findify"
 licenses := Seq("MIT" -> url("https://opensource.org/licenses/MIT"))
 homepage := Some(url("https://github.com/findify/clickhouse-akka-stream"))
 
 scalaVersion := "2.12.4"
 
-lazy val akkaVersion = "2.5.7"
-lazy val akkaHttpVersion = "10.0.10"
+lazy val akkaVersion = "2.5.9"
+lazy val akkaHttpVersion = "10.0.11"
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
@@ -20,22 +20,25 @@ libraryDependencies ++= Seq(
   "com.typesafe.scala-logging" %% "scala-logging" % "3.7.2",
   "ch.qos.logback" % "logback-classic" % "1.2.3" % "test",
   "org.scalatest" %% "scalatest" % "3.0.4" % "test",
-  "com.dimafeng" %% "testcontainers-scala" % "0.8.0" % "test",
-  "com.chuusai" %% "shapeless" % "2.3.2",
+  "com.dimafeng" %% "testcontainers-scala" % "0.14.0" % "test",
+  "com.chuusai" %% "shapeless" % "2.3.3",
   "joda-time" % "joda-time" % "2.9.9",
-  "io.circe" %% "circe-core" % "0.8.0",
-  "io.circe" %% "circe-generic" % "0.8.0",
-  "io.circe" %% "circe-parser" % "0.8.0"
+  "io.circe" %% "circe-core" % "0.9.1",
+  "io.circe" %% "circe-generic" % "0.9.1",
+  "io.circe" %% "circe-parser" % "0.9.1",
+  "org.scalacheck" %% "scalacheck" % "1.13.5" % "test"
 )
 
 publishMavenStyle := true
 
-publishTo := Some(
+/*publishTo := Some(
   if (isSnapshot.value)
     Opts.resolver.sonatypeSnapshots
   else
     Opts.resolver.sonatypeStaging
 )
+*/
+bintrayOrganization := Some("findify")
 
 //addCompilerPlugin("io.tryp" % "splain" % "0.2.7" cross CrossVersion.patch)
 

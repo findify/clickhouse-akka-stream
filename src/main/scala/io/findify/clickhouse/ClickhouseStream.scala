@@ -30,7 +30,7 @@ trait ClickhouseStream extends LazyLogging {
     )).flatMap {
       case HttpResponse(StatusCodes.OK, _, entity, _) =>
         entity.dataBytes.runFold(ByteString(""))(_ ++ _).map(_.utf8String).map(line => {
-          logger.info(s"status: OK, batch inserted: $line")
+          logger.debug(s"status: OK, batch inserted: $line")
           Done
         })
       case HttpResponse(code, _, entity, _) =>

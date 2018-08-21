@@ -9,6 +9,7 @@ import io.findify.clickhouse.format.{ClickhouseError, Field}
 import io.findify.clickhouse.format.Field.Row
 import io.findify.clickhouse.format.input.InputFormat.{Response, Statistics, TableMeta}
 import io.findify.clickhouse.format.input.JSONInputFormat._
+import cats.syntax.either._
 
 class JSONInputFormat extends InputFormat {
   implicit val fieldTypeDecoder = deriveDecoder[FieldType]

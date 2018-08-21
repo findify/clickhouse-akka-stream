@@ -5,6 +5,7 @@ import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings, Supervision}
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.testkit.{ImplicitSender, TestKit}
+import com.dimafeng.testcontainers.GenericContainer.DockerImage
 import com.dimafeng.testcontainers.{ForAllTestContainer, GenericContainer}
 import io.findify.clickhouse.ClickhouseFlow.Record
 import io.findify.clickhouse.format.Field.{CString, Row, UInt32, UInt64}
@@ -21,7 +22,7 @@ class SourceSinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike
   import io.findify.clickhouse.format.encoder.generic.auto._
 
   override val container = GenericContainer(
-    imageName = "yandex/clickhouse-server:1.1.54292",
+    dockerImage = DockerImage(Left("yandex/clickhouse-server:1.1.54342")),
     exposedPorts = Seq(8123),
     waitStrategy = Wait.forHttp("/")
   )

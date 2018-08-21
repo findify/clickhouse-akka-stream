@@ -5,6 +5,7 @@ import akka.actor.ActorSystem
 import akka.stream.scaladsl.{Sink, Source}
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings, Supervision}
 import akka.testkit.TestKit
+import com.dimafeng.testcontainers.GenericContainer.DockerImage
 import com.dimafeng.testcontainers.{ForAllTestContainer, GenericContainer}
 import com.typesafe.scalalogging.LazyLogging
 import io.findify.clickhouse.format.Field
@@ -23,7 +24,7 @@ import scala.util.Random
 
 class FuzzyWriteReadTest extends TestKit(ActorSystem("test")) with FlatSpecLike with Matchers with PropertyChecks with Checkers with ForAllTestContainer with BeforeAndAfterAll with LazyLogging {
   override val container = GenericContainer(
-    imageName = "yandex/clickhouse-server:1.1.54342",
+    dockerImage = DockerImage(Left("yandex/clickhouse-server:1.1.54342")),
     exposedPorts = Seq(8123),
     waitStrategy = Wait.forHttp("/")
   )

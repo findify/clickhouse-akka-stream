@@ -33,14 +33,15 @@ libraryDependencies ++= Seq(
 )
 
 publishMavenStyle := true
-bintrayOrganization := Some("findify")
-/*publishTo := Some(
+//bintrayOrganization := Some("findify")
+
+publishTo := Some(
   if (isSnapshot.value)
     Opts.resolver.sonatypeSnapshots
   else
     Opts.resolver.sonatypeStaging
 )
-*/
+
 
 
 //addCompilerPlugin("io.tryp" % "splain" % "0.2.7" cross CrossVersion.patch)

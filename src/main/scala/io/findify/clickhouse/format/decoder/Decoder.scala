@@ -3,7 +3,7 @@ package io.findify.clickhouse.format.decoder
 import io.findify.clickhouse.format.Field
 import io.findify.clickhouse.format.Field.{CString, Row}
 
-trait Decoder[T, +F <: Field] {
+trait Decoder[T, +F <: Field] extends Serializable {
   def decodeValue: PartialFunction[Field,T]
   def decode(name: String, row: Row): T = row.fields.get(name) match {
     case Some(in) => decodeValue.lift.apply(in) match {

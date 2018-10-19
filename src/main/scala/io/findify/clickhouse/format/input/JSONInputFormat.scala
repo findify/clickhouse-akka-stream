@@ -24,7 +24,7 @@ class JSONInputFormat extends InputFormat {
   override def name: String = "JSON"
   implicit def rowDecoder(implicit meta: TableMeta): Decoder[Row] = Decoder.instance(cursor => {
     val cells = (for {
-      fields <- cursor.fields.toList
+      fields <- cursor.keys.toList
       field <- fields
       fieldType <- meta.fields.get(field)
       fieldValue <- cursor.downField(field).focus

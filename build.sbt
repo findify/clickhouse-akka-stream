@@ -1,5 +1,5 @@
 name := "clickhouse-akka-stream"
-version := "0.4.4"
+version := "0.4.5-M2"
 organization := "io.findify"
 licenses := Seq("MIT" -> url("https://opensource.org/licenses/MIT"))
 homepage := Some(url("https://github.com/findify/clickhouse-akka-stream"))
@@ -10,6 +10,7 @@ crossScalaVersions := Seq("2.12.6", "2.11.12")
 
 lazy val akkaVersion = "2.5.14"
 lazy val akkaHttpVersion = "10.1.4"
+lazy val circeVersion = "0.10.0"
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
@@ -25,22 +26,22 @@ libraryDependencies ++= Seq(
   "com.dimafeng" %% "testcontainers-scala" % "0.20.0" % "test",
   "com.chuusai" %% "shapeless" % "2.3.3",
   "joda-time" % "joda-time" % "2.9.9",
-  "io.circe" %% "circe-core" % "0.9.3",
-  "io.circe" %% "circe-generic" % "0.9.3",
-  "io.circe" %% "circe-parser" % "0.9.3",
+  "io.circe" %% "circe-core" % circeVersion,
+  "io.circe" %% "circe-generic" % circeVersion,
+  "io.circe" %% "circe-parser" % circeVersion,
   "org.scalacheck" %% "scalacheck" % "1.14.0" % "test",
   "com.propensive" %% "magnolia" % "0.10.0"
 )
 
 publishMavenStyle := true
-//bintrayOrganization := Some("findify")
+bintrayOrganization := Some("findify")
 
-publishTo := Some(
-  if (isSnapshot.value)
-    Opts.resolver.sonatypeSnapshots
-  else
-    Opts.resolver.sonatypeStaging
-)
+//publishTo := Some(
+//  if (isSnapshot.value)
+//    Opts.resolver.sonatypeSnapshots
+//  else
+//    Opts.resolver.sonatypeStaging
+//)
 
 
 

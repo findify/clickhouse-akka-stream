@@ -5,6 +5,8 @@ import io.findify.clickhouse.format.ClickhouseError
 import io.findify.clickhouse.format.Field.Row
 import io.findify.clickhouse.format.input.InputFormat.Response
 
+import scala.collection.immutable.ListMap
+
 
 trait InputFormat {
   def name: String
@@ -13,6 +15,8 @@ trait InputFormat {
 
 object InputFormat {
   case class Statistics(elapsed: Double, rows_read: Int, bytes_read: Int)
-  case class TableMeta(fields: Map[String,String])
+  case class TableMeta(fields: ListMap[String, String]){
+    def getFieldType(fieldName: String): Option[String] = fields.get(fieldName)
+  }
   case class Response(meta: TableMeta,  data: List[Row], rows: Int, statistics: Option[Statistics], rowsBeforeLimit: Option[Int])
 }

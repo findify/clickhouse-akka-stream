@@ -1,16 +1,17 @@
 package io.findify.clickhouse.format.input
+
 import akka.util.ByteString
+import cats.syntax.either._
+import io.circe.generic.semiauto._
+import io.circe.parser._
 import io.circe.{Decoder, DecodingFailure}
 import io.findify.clickhouse.format
-import io.circe.parser._
-import io.circe.generic.semiauto._
-import io.findify.clickhouse.format.{ClickhouseError, Field}
+import io.findify.clickhouse.format.Field
 import io.findify.clickhouse.format.Field.Row
 import io.findify.clickhouse.format.input.InputFormat.{Response, Statistics, TableMeta}
 import io.findify.clickhouse.format.input.JSONInputFormat._
-import cats.syntax.either._
 
-class JSONInputFormat extends InputFormat {
+class JSONCompactInputFormat extends InputFormat {
   implicit val fieldTypeDecoder = deriveDecoder[FieldType]
   implicit val tableMetaDecoder: Decoder[TableMeta] = Decoder.instance(c => {
     for {
@@ -20,16 +21,17 @@ class JSONInputFormat extends InputFormat {
     }
   })
 
-  override def name: String = "JSON"
+  override def name: String = "JSONCompact"
+
+
+
   implicit def rowDecoder(implicit meta: TableMeta): Decoder[Row] = Decoder.instance(cursor => {
-    val cells = (for {
-      fields <- cursor.keys.toList
-      field <- fields
-      fieldType <- meta.getFieldType(field)
-      fieldValue <- cursor.downField(field).focus
-    } yield {
-      field -> Field(fieldType, fieldValue)
-    }).toMap
+    val cells: Map[String, Field] =
+      cursor.values.getOrElse(Seq.empty).zip(meta.fields).map({
+        case (fieldValue, (fieldName, fieldType)) =>
+          fieldName -> Field(fieldType, fieldValue)
+      })(scala.collection.breakOut)
+
     if (cells.size == meta.fields.size) {
       Right(Row(cells))
     } else {
@@ -60,8 +62,4 @@ class JSONInputFormat extends InputFormat {
   }
 }
 
-object JSONInputFormat {
-  case class FieldType(name: String, `type`: String)
 
-  case class JsonDecodingError(nested: io.circe.Error) extends ClickhouseError(nested.getMessage)
-}

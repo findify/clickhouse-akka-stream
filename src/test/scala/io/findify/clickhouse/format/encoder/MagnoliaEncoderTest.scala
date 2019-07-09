@@ -22,7 +22,7 @@ class MagnoliaEncoderTest extends FlatSpec with Matchers {
     val stream = new ObjectOutputStream(bytes)
     stream.writeObject(MagnoliaEncoderTest.encoder)
     stream.flush()
-    bytes.size() shouldBe 10
+    bytes.size() should be > (10)
   }
 }
 

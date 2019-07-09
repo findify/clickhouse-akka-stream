@@ -14,7 +14,7 @@ trait InputFormat {
 }
 
 object InputFormat {
-  case class Statistics(elapsed: Double, rows_read: Int, bytes_read: Int)
+  case class Statistics(elapsed: Double, rows_read: Long, bytes_read: Long)
   case class TableMeta(fields: ListMap[String, String]){
     def getFieldType(fieldName: String): Option[String] = fields.get(fieldName)
   }

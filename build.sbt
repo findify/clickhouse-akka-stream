@@ -1,15 +1,15 @@
 name := "clickhouse-akka-stream"
-version := "0.4.5-M4"
+version := "0.4.5-M5"
 organization := "io.findify"
 licenses := Seq("MIT" -> url("https://opensource.org/licenses/MIT"))
 homepage := Some(url("https://github.com/findify/clickhouse-akka-stream"))
 
-scalaVersion := "2.12.8"
+scalaVersion := "2.12.10"
 
-crossScalaVersions := Seq("2.12.8", "2.11.12")
+crossScalaVersions := Seq("2.12.10", "2.11.12")
 
-lazy val akkaVersion = "2.5.23"
-lazy val akkaHttpVersion = "10.1.8"
+lazy val akkaVersion = "2.5.25"
+lazy val akkaHttpVersion = "10.1.10"
 lazy val circeVersion = "0.11.1"
 
 libraryDependencies ++= Seq(
@@ -23,14 +23,14 @@ libraryDependencies ++= Seq(
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
   "ch.qos.logback" % "logback-classic" % "1.2.3" % "test",
   "org.scalatest" %% "scalatest" % "3.0.8" % "test",
-  "com.dimafeng" %% "testcontainers-scala" % "0.28.0" % "test",
+  "com.dimafeng" %% "testcontainers-scala" % "0.33.0" % "test",
   "com.chuusai" %% "shapeless" % "2.3.3",
-  "joda-time" % "joda-time" % "2.10.3",
+  "joda-time" % "joda-time" % "2.10.4",
   "io.circe" %% "circe-core" % circeVersion,
   "io.circe" %% "circe-generic" % circeVersion,
   "io.circe" %% "circe-parser" % circeVersion,
-  "org.scalacheck" %% "scalacheck" % "1.14.0" % "test",
-  "com.softwaremill" %% "magnolia" % "0.11.1-sml"
+  "org.scalacheck" %% "scalacheck" % "1.14.2" % "test",
+  "com.propensive" %% "magnolia" % "0.12.0"
 )
 
 publishMavenStyle := true

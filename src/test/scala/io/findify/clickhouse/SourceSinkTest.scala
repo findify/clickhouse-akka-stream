@@ -11,13 +11,17 @@ import io.findify.clickhouse.ClickhouseFlow.Record
 import io.findify.clickhouse.format.Field.{CString, Row, UInt32, UInt64}
 import io.findify.clickhouse.format.output.JSONEachRowOutputFormat
 import org.scalatest._
-import org.testcontainers.containers.wait.Wait
+import org.testcontainers.containers.wait.strategy.Wait
 
 import scala.concurrent.duration._
 import scala.concurrent.Await
 
-
-class SourceSinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike with ForAllTestContainer with ImplicitSender with BeforeAndAfterAll {
+class SourceSinkTest
+    extends TestKit(ActorSystem("test"))
+    with AsyncFlatSpecLike
+    with ForAllTestContainer
+    with ImplicitSender
+    with BeforeAndAfterAll {
   import io.findify.clickhouse.format.encoder.generic._
   import io.findify.clickhouse.format.encoder.generic.auto._
 
@@ -27,15 +31,14 @@ class SourceSinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike
     waitStrategy = Wait.forHttp("/")
   )
 
-  val sv: Supervision.Decider = {
-    case e: Throwable =>
-      println("oops", e)
-      Supervision.Restart
+  val sv: Supervision.Decider = { case e: Throwable =>
+    println("oops", e)
+    Supervision.Restart
   }
   val settings = ActorMaterializerSettings(system).withSupervisionStrategy(sv)
 
   implicit val mat = ActorMaterializer(settings)
-  lazy val client = new ClickhouseClient(container.containerIpAddress, container.container.getMappedPort(8123))
+  lazy val client  = new ClickhouseClient(container.containerIpAddress, container.container.getMappedPort(8123))
   override def afterAll(): Unit = {
     super.afterAll()
     TestKit.shutdownActorSystem(system)
@@ -49,31 +52,40 @@ class SourceSinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike
   implicit val fooEncoder = deriveEncoder[Foo]
 
   it should "create table schema for dummy batch insert" in {
-    client.execute("create table foo (k String, b Int32, ts Nullable(String)) ENGINE = Memory;").map(x => assert(x == Done))
+    client
+      .execute("create table foo (k String, b Int32, ts Nullable(String)) ENGINE = Memory;")
+      .map(x => assert(x == Done))
   }
 
   it should "insert dummy data there" in {
-    val data = Range(1,10000).map(i => Foo(i.toString, i, None).asRow)
+    val data   = Range(1, 10000).map(i => Foo(i.toString, i, None).asRow)
     val source = Source(data)
-    val sink = Sink.fromGraph(new ClickhouseSink(
-      host = container.containerIpAddress,
-      port = container.container.getMappedPort(8123),
-      table = "foo",
-      format = new JSONEachRowOutputFormat()
-    ))
+    val sink = Sink.fromGraph(
+      new ClickhouseSink(
+        host = container.containerIpAddress,
+        port = container.container.getMappedPort(8123),
+        table = "foo",
+        format = new JSONEachRowOutputFormat()
+      )
+    )
     val result = source.runWith(sink)
     result.map(r => assert(r == Done))
   }
 
   it should "have dummy data in db v1" in {
-    client.query("SELECT count(*) from foo").map(result => assert(result.data.head == Row(Map("count()" -> UInt64(9999)))))
+    client
+      .query("SELECT count(*) from foo")
+      .map(result => assert(result.data.head == Row(Map("count()" -> UInt64(9999)))))
   }
 
   it should "have dummy data in db v2" in {
     import io.findify.clickhouse.format.decoder.generic._
     import io.findify.clickhouse.format.decoder.generic.auto._
     implicit val dec = deriveDecoder[Foo]
-    client.query("SELECT * from foo order by b asc limit 10").map(_.data.map(_.as[Foo](dec))).map(result => assert(result.head == Foo("1", 1, None)))
+    client
+      .query("SELECT * from foo order by b asc limit 10")
+      .map(_.data.map(_.as[Foo](dec)))
+      .map(result => assert(result.head == Foo("1", 1, None)))
   }
 
   it should "create table schema for flow insert" in {
@@ -81,29 +93,33 @@ class SourceSinkTest extends TestKit(ActorSystem("test")) with AsyncFlatSpecLike
   }
 
   it should "insert dummy data via flow" in {
-    val data = Range(1,10000).map(i => Record(Row(Map("k" -> CString(i.toString), "b" -> UInt32(i))), i))
+    val data   = Range(1, 10000).map(i => Record(Row(Map("k" -> CString(i.toString), "b" -> UInt32(i))), i))
     val source = Source(data)
-    val flow = Flow.fromGraph(ClickhouseFlow[Int](
-      host = container.containerIpAddress,
-      port = container.container.getMappedPort(8123),
-      table = "flow",
-      format = new JSONEachRowOutputFormat()
-    ))
+    val flow = Flow.fromGraph(
+      ClickhouseFlow[Int](
+        host = container.containerIpAddress,
+        port = container.container.getMappedPort(8123),
+        table = "flow",
+        format = new JSONEachRowOutputFormat()
+      )
+    )
     val result = source.via(flow).runWith(Sink.foreach(x => println(x.passThrough.size)))
     result.map(r => assert(r == Done))
   }
 
   it should "insert data via periodic flush" in {
-    val data = Range(1,10000).map(i => Record(Row(Map("k" -> CString(i.toString), "b" -> UInt32(i))), i))
+    val data   = Range(1, 10000).map(i => Record(Row(Map("k" -> CString(i.toString), "b" -> UInt32(i))), i))
     val source = Source(data)
-    val flow = Flow.fromGraph(ClickhouseFlow[Int](
-      host = container.containerIpAddress,
-      port = container.container.getMappedPort(8123),
-      table = "flow",
-      format = new JSONEachRowOutputFormat(),
-      maxRowsInBuffer = 100000,
-      flushInterval = 10.millis
-    ))
+    val flow = Flow.fromGraph(
+      ClickhouseFlow[Int](
+        host = container.containerIpAddress,
+        port = container.container.getMappedPort(8123),
+        table = "flow",
+        format = new JSONEachRowOutputFormat(),
+        maxRowsInBuffer = 100000,
+        flushInterval = 10.millis
+      )
+    )
     val result = source.via(flow).runWith(Sink.foreach(x => println(x.passThrough.size)))
     result.map(r => assert(r == Done))
   }

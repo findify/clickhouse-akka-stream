@@ -10,8 +10,9 @@ import io.findify.clickhouse.format.ClickhouseError
 import io.findify.clickhouse.format.Field.Row
 import io.findify.clickhouse.format.input.InputFormat.{Response, Statistics, TableMeta}
 
+import scala.collection.immutable.ListMap
 
-trait GenericJSONInputFormat extends InputFormat{
+trait GenericJSONInputFormat extends InputFormat {
 
   import GenericJSONInputFormat._
 
@@ -22,7 +23,7 @@ trait GenericJSONInputFormat extends InputFormat{
     for {
       fields <- c.as[List[FieldType]]
     } yield {
-      TableMeta(fields.map(f => f.name -> f.`type`)(scala.collection.breakOut))
+      TableMeta(ListMap(fields.map(f => f.name -> f.`type`): _*))
     }
   })
 
@@ -32,10 +33,10 @@ trait GenericJSONInputFormat extends InputFormat{
       case Right(meta) =>
         implicit val imeta = meta
         for {
-          data <- cursor.downField("data").as[List[Row]]
-          rows <- cursor.downField("rows").as[Int]
+          data            <- cursor.downField("data").as[List[Row]]
+          rows            <- cursor.downField("rows").as[Int]
           rowsBeforeLimit <- cursor.downField("rows_before_limit_at_least").as[Option[Int]]
-          stats <- cursor.downField("statistics").as[Option[Statistics]]
+          stats           <- cursor.downField("statistics").as[Option[Statistics]]
         } yield {
           Response(meta, data, rows, stats, rowsBeforeLimit)
         }
@@ -44,7 +45,7 @@ trait GenericJSONInputFormat extends InputFormat{
   })
   override def read(data: ByteString): Either[format.ClickhouseError, Response] = {
     decode[Response](data.utf8String) match {
-      case Left(err) => Left(JsonDecodingError(err))
+      case Left(err)       => Left(JsonDecodingError(err))
       case Right(response) => Right(response)
     }
   }

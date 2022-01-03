@@ -26,7 +26,7 @@ class SourceSinkTest
   import io.findify.clickhouse.format.encoder.generic.auto._
 
   override val container = GenericContainer(
-    dockerImage = DockerImage(Left("yandex/clickhouse-server:1.1.54342")),
+    dockerImage = DockerImage(Left("yandex/clickhouse-server:21.11.6.7")),
     exposedPorts = Seq(8123),
     waitStrategy = Wait.forHttp("/")
   )
@@ -75,7 +75,7 @@ class SourceSinkTest
   it should "have dummy data in db v1" in {
     client
       .query("SELECT count(*) from foo")
-      .map(result => assert(result.data.head == Row(Map("count()" -> UInt64(9999)))))
+      .map(result => assert(result.data.head == Row(Seq("count()" -> UInt64(9999)))))
   }
 
   it should "have dummy data in db v2" in {
@@ -93,7 +93,7 @@ class SourceSinkTest
   }
 
   it should "insert dummy data via flow" in {
-    val data   = Range(1, 10000).map(i => Record(Row(Map("k" -> CString(i.toString), "b" -> UInt32(i))), i))
+    val data   = Range(1, 10000).map(i => Record(Row(Seq("k" -> CString(i.toString), "b" -> UInt32(i))), i))
     val source = Source(data)
     val flow = Flow.fromGraph(
       ClickhouseFlow[Int](
@@ -108,7 +108,7 @@ class SourceSinkTest
   }
 
   it should "insert data via periodic flush" in {
-    val data   = Range(1, 10000).map(i => Record(Row(Map("k" -> CString(i.toString), "b" -> UInt32(i))), i))
+    val data   = Range(1, 10000).map(i => Record(Row(Seq("k" -> CString(i.toString), "b" -> UInt32(i))), i))
     val source = Source(data)
     val flow = Flow.fromGraph(
       ClickhouseFlow[Int](

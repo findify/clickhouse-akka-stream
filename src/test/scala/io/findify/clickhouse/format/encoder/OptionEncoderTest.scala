@@ -11,20 +11,20 @@ class OptionEncoderTest extends FlatSpec with Matchers {
   val enc = deriveEncoder[Hello]
 
   it should "derive encoder for options" in {
-    enc.encode("hello", Hello("foo", Some(1))) shouldBe Map("a" -> CString("foo"), "b" -> Nullable(Some(Int32(1))))
+    enc.encode("hello", Hello("foo", Some(1))) shouldBe Seq("a" -> CString("foo"), "b" -> Nullable(Some(Int32(1))))
   }
 
   it should "work with none" in {
-    enc.encode("hello", Hello("foo", None)) shouldBe Map("a" -> CString("foo"), "b" -> Nullable(None))
+    enc.encode("hello", Hello("foo", None)) shouldBe Seq("a" -> CString("foo"), "b" -> Nullable(None))
   }
 
   it should "derive plain option encoders for string" in {
     val enc = deriveEncoder[Option[String]]
-    enc.encode("f", Some("x")) shouldBe Map("f" -> Nullable(Some(CString("x"))))
+    enc.encode("f", Some("x")) shouldBe Seq("f" -> Nullable(Some(CString("x"))))
   }
 
   it should "derive plain option encoders for int" in {
     val enc = deriveEncoder[Option[Int]]
-    enc.encode("f", Some(1)) shouldBe Map("f" -> Nullable(Some(Int32(1))))
+    enc.encode("f", Some(1)) shouldBe Seq("f" -> Nullable(Some(Int32(1))))
   }
 }

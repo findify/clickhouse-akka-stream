@@ -17,7 +17,7 @@ TODO:
 
 Build artifacts are available on maven-central for Scala 2.12 and 2.13. For SBT, add this snippet to `build.sbt`:
 ```scala
-libraryDependencies += "io.findify" %% "clickhouse-akka-stream" % "0.4.6"
+libraryDependencies += "io.findify" %% "clickhouse-akka-stream" % "0.5.0"
 ```
 
 ## Example
@@ -93,7 +93,7 @@ class ReadExample {
 
 The MIT License (MIT)
 
-Copyright (c) 2021 Findify AB
+Copyright (c) 2022 Findify AB
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 

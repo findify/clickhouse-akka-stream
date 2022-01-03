@@ -32,7 +32,7 @@ class FuzzyWriteReadTest
     with BeforeAndAfterAll
     with LazyLogging {
   override val container = GenericContainer(
-    dockerImage = DockerImage(Left("yandex/clickhouse-server:1.1.54342")),
+    dockerImage = DockerImage(Left("yandex/clickhouse-server:21.11.6.7")),
     exposedPorts = Seq(8123),
     waitStrategy = Wait.forHttp("/")
   )
@@ -129,7 +129,7 @@ class FuzzyWriteReadTest
     valueFields <- Gen.listOfN(10, genField(value))
   } yield {
     val rows = keyFields.zip(valueFields).map { case (k, v) =>
-      Row(Map("k" -> k, "v" -> v))
+      Row(Seq("k" -> k, "v" -> v))
     }
     Schema(s"test$table", key, value, rows)
   }

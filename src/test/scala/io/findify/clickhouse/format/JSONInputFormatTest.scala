@@ -11,7 +11,7 @@ import sun.nio.cs.StandardCharsets
 class JSONInputFormatTest extends FlatSpec with Matchers {
   val dec = new JSONInputFormat()
   it should "decode sample messages" in {
-    val example = """{
+    val example  = """{
                     |        "meta":
                     |        [
                     |                {
@@ -131,7 +131,7 @@ class JSONInputFormatTest extends FlatSpec with Matchers {
   }
 
   it should "work with nulls" in {
-    val input = """{
+    val input    = """{
                   |        "meta":
                   |        [
                   |                {
@@ -165,7 +165,7 @@ class JSONInputFormatTest extends FlatSpec with Matchers {
     response.right.get.data.size shouldBe 1
   }
   it should "work with 64-bit ints" in {
-    val input = """{
+    val input    = """{
                   |        "meta":
                   |        [
                   |                {
@@ -201,11 +201,11 @@ class JSONInputFormatTest extends FlatSpec with Matchers {
                   |        }
                   |}""".stripMargin
     val response = dec.read(ByteString(input))
-    response.right.get.data shouldBe List(Row(Map("key" -> CString("foo"), "a" -> Int64(123), "b" -> UInt64(456))))
+    response.right.get.data shouldBe List(Row(Seq("key" -> CString("foo"), "a" -> Int64(123), "b" -> UInt64(456))))
   }
 
   it should "work with dates" in {
-    val input = """{
+    val input    = """{
                   |        "meta":
                   |        [
                   |                {
@@ -241,13 +241,21 @@ class JSONInputFormatTest extends FlatSpec with Matchers {
                   |        }
                   |}""".stripMargin
     val response = dec.read(ByteString(input))
-    response.right.get.data shouldBe List(Row(Map("key" -> CString("foo"), "a" -> CDate(new LocalDate(2017, 1, 1)), "b" -> CDateTime(new LocalDateTime(2017, 1, 1, 0, 0, 1)))))
+    response.right.get.data shouldBe List(
+      Row(
+        Seq(
+          "key" -> CString("foo"),
+          "a"   -> CDate(new LocalDate(2017, 1, 1)),
+          "b"   -> CDateTime(new LocalDateTime(2017, 1, 1, 0, 0, 1))
+        )
+      )
+    )
     response.right.get.rows shouldBe 1
     response.right.get.statistics shouldBe Some(Statistics(0.000334462, 1, 22))
   }
 
   it should "correctly decode dates and datetimes" in {
-    val input = """{
+    val input    = """{
                   |        "meta":
                   |        [
                   |                {
@@ -278,11 +286,13 @@ class JSONInputFormatTest extends FlatSpec with Matchers {
                   |        }
                   |}""".stripMargin
     val response = dec.read(ByteString(input)).right.get
-    response.data shouldBe List(Row(Map("d" -> CDate(new LocalDate(2017,1,1)), "dt" -> CDateTime(new LocalDateTime(2017,1,1,1,1,1)))))
+    response.data shouldBe List(
+      Row(Seq("d" -> CDate(new LocalDate(2017, 1, 1)), "dt" -> CDateTime(new LocalDateTime(2017, 1, 1, 1, 1, 1))))
+    )
   }
 
   it should "decode nullable strings" in {
-    val input = """{
+    val input    = """{
                   |        "meta":
                   |        [
                   |                {
@@ -315,6 +325,8 @@ class JSONInputFormatTest extends FlatSpec with Matchers {
                   |        }
                   |}""".stripMargin
     val response = dec.read(ByteString(input)).right.get
-    response.data shouldBe List(Row(Map("search:count" -> UInt64(103), "search:query" -> Nullable(Option.empty[CString]))))
+    response.data shouldBe List(
+      Row(Seq("search:count" -> UInt64(103), "search:query" -> Nullable(Option.empty[CString])))
+    )
   }
 }

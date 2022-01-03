@@ -11,14 +11,14 @@ class JSONCompactInputFormat extends GenericJSONInputFormat {
 
   implicit def rowDecoder(implicit meta: TableMeta): Decoder[Row] = Decoder.instance(cursor => {
     val br = 1
-    val cells: Map[String, Field] =
+    val cells: Seq[(String, Field)] =
       cursor.values
         .getOrElse(Seq.empty)
         .zip(meta.fields)
         .map({ case (fieldValue, (fieldName, fieldType)) =>
           fieldName -> Field(fieldType, fieldValue)
         })
-        .toMap
+        .toSeq
 
     if (cells.size == meta.fields.size) {
       Right(Row(cells))

@@ -11,16 +11,16 @@ object auto {
   type Typeclass[T] = RowEncoder[T]
 
   def combine[T](ctx: CaseClass[RowEncoder, T]): RowEncoder[T] = new Encoder[T, Field] {
-    override def encode(name: String, value: T): Map[String, Field] = {
+    override def encode(name: String, value: T): Seq[(String, Field)] = {
       ctx.parameters.flatMap(param => {
         param.typeclass.encode(param.label, param.dereference(value))
-      }).toMap
+      })
     }
   }
 
-  def dispatch[T](ctx: SealedTrait[RowEncoder, T])(): RowEncoder[T] =  new Encoder[T, Field] {
-    override def encode(name: String, value: T): Map[String, Field] = {
-      Map.empty
+  def dispatch[T](ctx: SealedTrait[RowEncoder, T])(): RowEncoder[T] = new Encoder[T, Field] {
+    override def encode(name: String, value: T): Seq[(String, Field)] = {
+      Seq.empty
     }
   }
 
